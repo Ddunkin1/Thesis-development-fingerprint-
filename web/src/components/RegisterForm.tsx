@@ -77,7 +77,7 @@ export function RegisterForm() {
 
   if (saved) {
     return (
-      <div className="max-w-xl rounded-lg border border-ok/40 p-6">
+      <div className="max-w-xl rounded-xl border bg-card border-ok/40 p-6">
         <div className="flex items-center gap-3 text-ok">
           <CheckCircle2 className="size-6" />
           <h2 className="font-display text-3xl font-bold uppercase">{saved.kind === "monthly" ? "Member registered" : "Walk-in logged"}</h2>
@@ -110,7 +110,7 @@ export function RegisterForm() {
         <TabsList><TabsTrigger value="monthly">Monthly member</TabsTrigger><TabsTrigger value="walkin">Walk-in</TabsTrigger></TabsList>
       </Tabs>
 
-      <div className="mt-4 space-y-5 rounded-lg border p-5">
+      <div className="mt-4 space-y-5 rounded-xl border bg-card p-5">
         <div className="space-y-1.5">
           <Label htmlFor="fullName">Full name</Label>
           <Input id="fullName" className="h-10" value={fullName} onChange={(e) => setFullName(e.target.value)} maxLength={100} placeholder="Juan Dela Cruz" autoComplete="off" />
@@ -166,7 +166,7 @@ export function RegisterForm() {
       </div>
 
       {mode === "walkin" && walkins.length > 0 && (
-        <section className="mt-6 rounded-lg border p-4">
+        <section className="mt-6 rounded-xl border bg-card p-4">
           <h3 className="eyebrow mb-2">Today&apos;s walk-ins</h3>
           <ul className="divide-y text-sm">
             {walkins.map((w) => (

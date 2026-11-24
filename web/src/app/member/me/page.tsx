@@ -50,7 +50,7 @@ export default function MePage() {
             <ul className="grid grid-cols-2 gap-3">
               {p.badges.map((b) => (
                 <li key={b.key} className={`relative flex flex-col gap-2 rounded-2xl border p-4 ${b.earned ? "border-brand/50 bg-brand/5" : "opacity-60"}`}>
-                  {b.isNew && <span className="pop-in absolute right-3 top-3 rounded bg-brand px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">New</span>}
+                  {b.isNew && <span className="pop-in absolute right-3 top-3 rounded bg-brand px-1.5 py-0.5 text-[0.75rem] font-bold uppercase tracking-wider text-white">New</span>}
                   <span className={`flex size-12 items-center justify-center rounded-full ${b.earned ? "bg-brand text-white" : "bg-muted text-muted-foreground"}`}>
                     {b.earned ? <BadgeIcon badgeKey={b.key} className="size-6" /> : <Lock className="size-5" />}
                   </span>
@@ -65,8 +65,8 @@ export default function MePage() {
 
           <section aria-label="Recent visits">
             <h2 className="eyebrow mb-3">Recent visits</h2>
-            {p.visits.length === 0 ? <p className="rounded-2xl border p-6 text-center text-sm text-muted-foreground">No visits yet. Scan in at the gym.</p> : (
-              <ul className="divide-y rounded-2xl border">
+            {p.visits.length === 0 ? <p className="rounded-2xl border bg-card p-6 text-center text-sm text-muted-foreground">No visits yet. Scan in at the gym.</p> : (
+              <ul className="divide-y rounded-2xl border bg-card">
                 {p.visits.map((v, i) => (
                   <li key={i} className="flex items-center justify-between px-4 py-3 text-sm">
                     <span className="font-medium">{v.day}</span>
@@ -77,7 +77,7 @@ export default function MePage() {
             )}
           </section>
 
-          <section aria-label="Settings" className="space-y-1 rounded-2xl border">
+          <section aria-label="Settings" className="space-y-1 rounded-2xl border bg-card">
             <div className="flex items-center justify-between gap-4 p-4">
               <div>
                 <div className="font-medium">Show me on the leaderboard</div>

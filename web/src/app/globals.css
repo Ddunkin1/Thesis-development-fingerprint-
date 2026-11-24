@@ -12,23 +12,23 @@
  * :root = LIGHT, .dark = DARK. Status colours (ok/warn/bad) are darker in light mode to keep text readable.
  */
 :root {
-  --background: #f6f6f9;
-  --foreground: #131318;
+  --background: #f3f3f7;
+  --foreground: #0a0a0f;
   --card: #ffffff;
-  --card-foreground: #131318;
+  --card-foreground: #0a0a0f;
   --popover: #ffffff;
-  --popover-foreground: #131318;
+  --popover-foreground: #0a0a0f;
   --primary: #7c3aed;
   --primary-foreground: #ffffff;
   --secondary: #ececf2;
-  --secondary-foreground: #131318;
-  --muted: #eeeef3;
-  --muted-foreground: #62626f;
+  --secondary-foreground: #0a0a0f;
+  --muted: #ececf2;
+  --muted-foreground: #454553;
   --accent: #e9e9f0;
-  --accent-foreground: #131318;
+  --accent-foreground: #0a0a0f;
   --destructive: #dc2626;
-  --border: #dedee6;
-  --input: #d2d2dc;
+  --border: #d2d2dd;
+  --input: #c3c3d0;
   --ring: #7c3aed;
 
   --brand: #6d28d9;
@@ -45,38 +45,38 @@
 
   --radius: 0.5rem;
   --sidebar: #ffffff;
-  --sidebar-foreground: #131318;
+  --sidebar-foreground: #0a0a0f;
   --sidebar-primary: #7c3aed;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #eeeef3;
-  --sidebar-accent-foreground: #131318;
-  --sidebar-border: #dedee6;
+  --sidebar-accent: #ececf2;
+  --sidebar-accent-foreground: #0a0a0f;
+  --sidebar-border: #d2d2dd;
   --sidebar-ring: #7c3aed;
 
   /* streak tile "no workout" colours (the purple levels are the same in both themes) */
-  --tile-empty-bg: #ebebf1;
-  --tile-empty-fg: #8a8a99;
-  --tile-empty-border: #dcdce5;
+  --tile-empty-bg: #e9e9f0;
+  --tile-empty-fg: #70707f;
+  --tile-empty-border: #d4d4de;
 }
 
 .dark {
   --background: #09090b;
-  --foreground: #f4f4f6;
-  --card: #101013;
-  --card-foreground: #f4f4f6;
-  --popover: #131317;
-  --popover-foreground: #f4f4f6;
+  --foreground: #ffffff;
+  --card: #121217;
+  --card-foreground: #ffffff;
+  --popover: #17171d;
+  --popover-foreground: #ffffff;
   --primary: #7c3aed;
   --primary-foreground: #ffffff;
-  --secondary: #1a1a1f;
-  --secondary-foreground: #f4f4f6;
-  --muted: #16161a;
-  --muted-foreground: #8a8a96;
-  --accent: #1c1c22;
-  --accent-foreground: #f4f4f6;
+  --secondary: #1f1f26;
+  --secondary-foreground: #ffffff;
+  --muted: #1a1a20;
+  --muted-foreground: #b6b6c4;
+  --accent: #23232b;
+  --accent-foreground: #ffffff;
   --destructive: #f05252;
-  --border: #25252c;
-  --input: #2c2c34;
+  --border: #2d2d37;
+  --input: #363641;
   --ring: #8b5cf6;
 
   --brand: #8b5cf6;
@@ -91,18 +91,29 @@
   --chart-4: #34d399;
   --chart-5: #fbbf24;
 
-  --sidebar: #0c0c0f;
-  --sidebar-foreground: #f4f4f6;
+  --sidebar: #0d0d11;
+  --sidebar-foreground: #ffffff;
   --sidebar-primary: #7c3aed;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #1c1c22;
-  --sidebar-accent-foreground: #f4f4f6;
-  --sidebar-border: #25252c;
+  --sidebar-accent: #23232b;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #2d2d37;
   --sidebar-ring: #8b5cf6;
 
-  --tile-empty-bg: #14141a;
-  --tile-empty-fg: #6a6a78;
-  --tile-empty-border: #25252c;
+  --tile-empty-bg: #16161c;
+  --tile-empty-fg: #8c8c9b;
+  --tile-empty-border: #2d2d37;
+}
+
+
+/* Type scale (replaces Tailwind's smaller defaults): readable on a phone and on the front-desk PC. */
+@theme {
+  --text-xs: 0.8125rem;   --text-xs--line-height: 1.25rem;     /* 13px  small labels */
+  --text-sm: 0.9375rem;   --text-sm--line-height: 1.45rem;     /* 15px  body, tables, forms */
+  --text-base: 1.0625rem; --text-base--line-height: 1.6rem;    /* 17px  large body */
+  --text-lg: 1.1875rem;   --text-lg--line-height: 1.7rem;
+  --text-xl: 1.375rem;    --text-xl--line-height: 1.8rem;
+  --text-2xl: 1.625rem;   --text-2xl--line-height: 2rem;
 }
 
 @theme inline {
@@ -158,7 +169,7 @@
 @layer base {
   * { @apply border-border; }
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-background text-foreground antialiased text-sm;
     font-family: var(--font-geist-sans), system-ui, sans-serif;
   }
   /* native date pickers / selects follow the theme */
@@ -169,7 +180,7 @@
 /* Scoreboard typography: condensed display face + tabular figures for every number that matters. */
 .font-display { font-family: var(--font-display), "Arial Narrow", sans-serif; letter-spacing: 0.01em; }
 .numeral { font-family: var(--font-display), "Arial Narrow", sans-serif; font-variant-numeric: tabular-nums; font-weight: 700; line-height: 1; }
-.eyebrow { font-family: var(--font-display), sans-serif; text-transform: uppercase; letter-spacing: 0.14em; font-size: 0.75rem; font-weight: 600; color: var(--muted-foreground); }
+.eyebrow { font-family: var(--font-display), sans-serif; text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.875rem; font-weight: 600; color: var(--muted-foreground); }
 
 /* ---- Streak tiles: gray -> light purple -> purple -> deep purple + flame -> glowing purple-fire ---- */
 .tile-l0 { background: var(--tile-empty-bg); color: var(--tile-empty-fg); border: 1px solid var(--tile-empty-border); }

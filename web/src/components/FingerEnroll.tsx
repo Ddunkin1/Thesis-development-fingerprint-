@@ -41,7 +41,7 @@ export function FingerEnroll({
 
   const done = !!template && !busy;
   return (
-    <div className={`rounded-lg border p-4 ${done ? "border-ok/40" : ""}`}>
+    <div className={`rounded-xl border bg-card p-4 ${done ? "border-ok/40" : ""}`}>
       <div className="flex items-center gap-4">
         <div className={`relative flex size-14 shrink-0 items-center justify-center rounded-full border
           ${done ? "border-ok text-ok" : busy ? "border-brand text-brand" : "text-muted-foreground"}`}>

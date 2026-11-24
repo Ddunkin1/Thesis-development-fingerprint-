@@ -27,7 +27,7 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
         const active = href === "/admin" ? path === "/admin" : path.startsWith(href);
         return (
           <Link key={href} href={href} onClick={onNavigate} aria-current={active ? "page" : undefined}
-            className={`relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors
+            className={`relative flex items-center gap-3 rounded-md px-3.5 py-2.5 text-[0.9375rem] font-medium transition-colors
               ${active ? "bg-accent text-foreground" : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"}`}>
             {active && <span className="absolute inset-y-1.5 left-0 w-0.5 rounded bg-brand" />}
             <Icon className="size-4" /> {label}
@@ -35,7 +35,7 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
         );
       })}
       <Link href="/kiosk" onClick={onNavigate}
-        className="mt-3 flex items-center gap-3 rounded-md border border-brand/50 px-3 py-2 text-sm font-semibold text-brand transition-colors hover:bg-brand hover:text-white">
+        className="mt-3 flex items-center gap-3 rounded-md border border-brand/50 px-3 py-2 text-[0.9375rem] font-semibold text-brand transition-colors hover:bg-brand hover:text-white">
         <MonitorPlay className="size-4" /> Open kiosk
       </Link>
     </nav>
@@ -46,7 +46,7 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
 export function AdminShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen">
-      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col gap-6 border-r bg-sidebar p-4 md:flex">
+      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col gap-6 border-r bg-sidebar p-4 md:flex">
         <Brand size="sm" />
         <NavList />
         <ScannerStatus />

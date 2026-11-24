@@ -3,7 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 /** Generic read-only table for {headers, rows} results. Numeric-looking columns are right-aligned. */
 export function DataTable({ headers, rows, empty = "No data for this range." }: { headers: string[]; rows: (string | number)[][]; empty?: string }) {
   return (
-    <div className="rounded-lg border">
+    <div className="rounded-xl border bg-card">
       <Table>
         <TableHeader>
           <TableRow>{headers.map((h, i) => <TableHead key={h} className={`whitespace-nowrap ${i > 0 && typeof rows[0]?.[i] === "number" ? "text-right" : ""}`}>{h}</TableHead>)}</TableRow>

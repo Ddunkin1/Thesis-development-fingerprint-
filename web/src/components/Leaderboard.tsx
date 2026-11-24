@@ -23,8 +23,8 @@ export function Leaderboard() {
       </div>
 
       {!data && <Skeleton className="h-48 w-full" />}
-      {data?.rows.length === 0 && <p className="rounded-lg border p-8 text-center text-muted-foreground">No attendance this month yet.</p>}
-      <ol className="divide-y rounded-lg border">
+      {data?.rows.length === 0 && <p className="rounded-xl border bg-card p-8 text-center text-muted-foreground">No attendance this month yet.</p>}
+      <ol className="divide-y rounded-xl border bg-card">
         {data?.rows.map((r, i) => (
           <li key={r.userId} className="flex items-center gap-4 px-4 py-3">
             <span className={`numeral w-10 text-center text-4xl ${i === 0 ? "text-brand" : "text-muted-foreground"}`}>{i + 1}</span>

@@ -13,7 +13,7 @@ function RowItem({ r }: { r: Row }) {
     <li className={`flex items-center gap-4 px-4 py-3 ${r.isMe ? "bg-brand/10" : ""}`}>
       <span className={`numeral w-9 text-center text-4xl ${r.rank === 1 ? "text-brand" : "text-muted-foreground"}`}>{r.rank}</span>
       <div className="min-w-0 flex-1">
-        <div className="truncate font-medium">{r.name}{r.isMe && <span className="ml-2 rounded bg-brand px-1.5 py-0.5 align-middle text-[10px] font-bold uppercase tracking-wider text-white">You</span>}</div>
+        <div className="truncate font-medium">{r.name}{r.isMe && <span className="ml-2 rounded bg-brand px-1.5 py-0.5 align-middle text-[0.75rem] font-bold uppercase tracking-wider text-white">You</span>}</div>
         <div className="text-xs text-muted-foreground">{r.visits} visit{r.visits === 1 ? "" : "s"} this month</div>
       </div>
       <div className="numeral flex items-center gap-1 text-3xl text-brand"><Flame className="size-5" />{r.best}</div>
@@ -59,9 +59,9 @@ export default function BoardPage() {
           </section>
 
           {b.top.length === 0 ? (
-            <p className="rounded-2xl border p-8 text-center text-muted-foreground">Nobody has checked in this month yet. Be the first.</p>
+            <p className="rounded-2xl border bg-card p-8 text-center text-muted-foreground">Nobody has checked in this month yet. Be the first.</p>
           ) : (
-            <ol className="divide-y overflow-hidden rounded-2xl border">
+            <ol className="divide-y overflow-hidden rounded-2xl border bg-card">
               {b.top.map((r) => <RowItem key={r.rank} r={r} />)}
               {b.me && b.me.rank > 10 && (<><li className="px-4 py-1 text-center text-muted-foreground">⋮</li><RowItem r={b.me} /></>)}
             </ol>

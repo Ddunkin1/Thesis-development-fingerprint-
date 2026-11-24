@@ -86,12 +86,12 @@ export function MembersTable() {
         <Input className="h-10 pl-9" placeholder="Search name or username..." value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search members" />
       </div>
 
-      <div className="rounded-lg border">
+      <div className="rounded-xl border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Member</TableHead><TableHead>Status</TableHead><TableHead>Expires</TableHead>
-              <TableHead className="text-right">Streak</TableHead><TableHead className="text-right">Prints</TableHead><TableHead className="w-0" />
+              <TableHead>Member</TableHead><TableHead>Status</TableHead><TableHead className="hidden sm:table-cell">Expires</TableHead>
+              <TableHead className="hidden text-right md:table-cell">Streak</TableHead><TableHead className="hidden text-right md:table-cell">Prints</TableHead><TableHead className="w-0" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -104,14 +104,14 @@ export function MembersTable() {
                   <div className="font-mono text-xs text-muted-foreground">{r.username}</div>
                 </TableCell>
                 <TableCell><Badge variant="outline" className={STATUS[r.status].cls}>{STATUS[r.status].label}</Badge></TableCell>
-                <TableCell className="tabular-nums">
+                <TableCell className="hidden tabular-nums sm:table-cell">
                   {r.expiryDate ?? "-"}
                   {r.daysLeft !== null && r.daysLeft >= 0 && <div className="text-xs text-muted-foreground">{r.daysLeft} day(s) left</div>}
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="hidden text-right md:table-cell">
                   {r.streak > 0 ? <span className="numeral inline-flex items-center gap-1 text-xl text-brand"><Flame className="size-4" />{r.streak}</span> : <span className="text-muted-foreground">-</span>}
                 </TableCell>
-                <TableCell className="text-right tabular-nums">{r.fingers}</TableCell>
+                <TableCell className="hidden text-right tabular-nums md:table-cell">{r.fingers}</TableCell>
                 <TableCell>
                   <div className="flex items-center justify-end gap-1.5">
                     <Button size="sm" onClick={() => open({ kind: "renew", m: r })}><RefreshCw /> Renew</Button>

@@ -15,7 +15,7 @@ export function WeekTiles({ week, big = false }: { week: Tile[]; big?: boolean }
             title={t.attended ? `${t.label}: streak day ${t.streak}` : t.frozen ? `${t.label}: rest day (freeze used)` : `${t.label}: no workout`}
             className={`tile-l${t.level} ${t.isToday ? "tile-today" : ""} flex flex-col items-center justify-center rounded-md
               ${big ? "h-24 gap-2 md:h-40" : "h-14 gap-1"}`}>
-            <span className={`font-display font-semibold uppercase tracking-widest opacity-90 ${big ? "text-base md:text-2xl" : "text-[11px]"}`}>{t.label}</span>
+            <span className={`font-display font-semibold uppercase tracking-widest opacity-90 ${big ? "text-base md:text-2xl" : "text-xs"}`}>{t.label}</span>
             {t.level >= 3 ? <Flame className={`${icon} flame`} aria-hidden />
               : t.attended ? <Check className={icon} aria-hidden />
               : t.frozen ? <Snowflake className={icon} aria-hidden />

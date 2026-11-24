@@ -66,7 +66,7 @@ export function Dashboard() {
       {error && <p className="text-sm text-warn">{error}</p>}
 
       {/* Scoreboard: hairline-divided cells instead of a grid of separate cards */}
-      <section aria-label="Today and members" className="grid grid-cols-2 divide-x divide-y rounded-lg border md:grid-cols-4 [&>*:nth-child(-n+2)]:border-t-0">
+      <section aria-label="Today and members" className="grid grid-cols-2 divide-x divide-y rounded-xl border bg-card md:grid-cols-4 [&>*:nth-child(-n+2)]:border-t-0">
         <Stat label="Check-ins today" value={d.checkinsToday} tone="text-brand" />
         <Stat label="Walk-ins today" value={d.walkinsToday} />
         <Stat label="Income today" value={peso(d.incomeToday)} currency />
@@ -74,20 +74,20 @@ export function Dashboard() {
         <Stat label="Active members" value={d.members.active} tone="text-ok" />
         <Stat label="Expiring (3 days)" value={d.members.expiring} tone="text-warn" />
         <Stat label="Expired" value={d.members.expired} tone="text-bad" />
-        <Link href="/admin/members" className="group flex items-end justify-between p-5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
+        <Link href="/admin/members" className="group flex items-end justify-between p-5 text-base text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
           Manage members <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
         </Link>
       </section>
 
       <div className="grid gap-6 lg:grid-cols-3 [&>*]:min-w-0">
-        <section className="rounded-lg border p-5 lg:col-span-2">
+        <section className="rounded-xl border bg-card p-5 lg:col-span-2">
           <div className="flex items-baseline justify-between">
             <h2 className="eyebrow">Peak hours · last 30 days</h2>
             {peak.count > 0 && <span className="text-sm text-muted-foreground">Busiest: <b className="text-foreground">{hourLabel(peak.hour)}</b></span>}
           </div>
           <ChartContainer config={chartConfig} className="mt-4 h-52 w-full">
             <BarChart data={chartData} margin={{ left: 0, right: 0, top: 4 }}>
-              <XAxis dataKey="label" tickLine={false} axisLine={false} interval={2} tick={{ fontSize: 11 }} />
+              <XAxis dataKey="label" tickLine={false} axisLine={false} interval={2} tick={{ fontSize: 13 }} />
               <ChartTooltip cursor={{ fill: "var(--accent)" }} content={<ChartTooltipContent hideLabel />} />
               <Bar dataKey="count" radius={2}>
                 {chartData.map((c, i) => <Cell key={i} fill={c.count > 0 && c.count === peak.count ? "var(--chart-2)" : "var(--chart-1)"} />)}
@@ -97,7 +97,7 @@ export function Dashboard() {
           {peak.count === 0 && <p className="text-sm text-muted-foreground">No check-ins recorded yet.</p>}
         </section>
 
-        <section className="rounded-lg border p-5">
+        <section className="rounded-xl border bg-card p-5">
           <h2 className="eyebrow">Needs attention</h2>
           {d.attention.length === 0 ? <p className="mt-4 text-sm text-muted-foreground">Nobody is expiring or expired.</p> : (
             <ul className="mt-3 divide-y text-sm">
@@ -115,7 +115,7 @@ export function Dashboard() {
         </section>
       </div>
 
-      <section className="rounded-lg border p-5">
+      <section className="rounded-xl border bg-card p-5">
         <div className="flex items-baseline justify-between">
           <h2 className="eyebrow">Recent attendance</h2>
           <Link href="/admin/attendance" className="inline-flex items-center gap-1 text-sm text-brand hover:underline">Full history <ArrowRight className="size-3.5" /></Link>

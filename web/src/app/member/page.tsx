@@ -45,7 +45,7 @@ export default function MemberHome() {
 
           {/* what to do next: always one clear goal */}
           {p.nextBadge && (
-            <section className="rounded-2xl border p-4">
+            <section className="rounded-2xl border bg-card p-4">
               <div className="flex items-center gap-2 text-sm">
                 <Target className="size-4 text-brand" />
                 <span><b>{p.nextBadge.remaining} more {p.nextBadge.unit}{p.nextBadge.remaining === 1 ? "" : "s"}</b> to <b className="text-brand">{p.nextBadge.label}</b></span>
@@ -56,11 +56,11 @@ export default function MemberHome() {
             </section>
           )}
 
-          <section aria-label="Your numbers" className="grid grid-cols-3 divide-x rounded-2xl border">
+          <section aria-label="Your numbers" className="grid grid-cols-3 divide-x rounded-2xl border bg-card">
             {[["Visits", p.stats.totalVisits], ["This month", p.stats.thisMonth], ["Best streak", p.stats.bestStreak]].map(([label, value]) => (
               <div key={label} className="p-4 text-center">
                 <div className="numeral text-4xl">{value}</div>
-                <div className="eyebrow mt-2 !text-[0.65rem]">{label}</div>
+                <div className="eyebrow mt-2 !text-[0.75rem]">{label}</div>
               </div>
             ))}
           </section>
@@ -71,7 +71,7 @@ export default function MemberHome() {
             </p>
           )}
 
-          <section className="rounded-2xl border p-4" aria-label="Membership">
+          <section className="rounded-2xl border bg-card p-4" aria-label="Membership">
             <div className="flex items-center justify-between">
               <h2 className="eyebrow">Membership</h2>
               <Badge variant="outline" className={STATUS[p.membership.status].cls}>{STATUS[p.membership.status].label}</Badge>
@@ -80,7 +80,7 @@ export default function MemberHome() {
               <div className="mt-3 flex items-end justify-between">
                 <div>
                   <div className="numeral text-5xl">{Math.max(p.membership.daysLeft ?? 0, 0)}</div>
-                  <div className="eyebrow mt-1 !text-[0.65rem]">days left</div>
+                  <div className="eyebrow mt-1 !text-[0.75rem]">days left</div>
                 </div>
                 <div className="text-right text-sm text-muted-foreground">Expires<br /><b className="text-foreground">{p.membership.expiryDate}</b></div>
               </div>
