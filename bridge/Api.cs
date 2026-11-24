@@ -34,6 +34,9 @@ public static class Api
         {
             ok = true,
             scannerConnected = scanner.Connected,
+            scannerPluggedIn = scanner.UsbPresent,   // true while the scanner is plugged in but still reconnecting
+            scannerReady = scanner.Connected && !scanner.TemplatesPending,   // connected AND fingerprints loaded
+            templatesPending = scanner.TemplatesPending,
             scannerError = scanner.Connected ? null : scanner.LastError,
             templatesLoaded = scanner.TemplatesLoaded,
             lastScanAt = scanner.LastScanAt,
@@ -105,6 +108,10 @@ public static class Api
         catch (ScannerLostException)
         {
             return Results.Json(new { ok = false, code = "scanner_disconnected", message = "Scanner is not connected. Check the USB cable." }, statusCode: 503);
+        }
+        catch (ScannerStartingException)
+        {
+            return Results.Json(new { ok = false, code = "starting", message = "Loading fingerprints, please try again in a moment." }, statusCode: 503);
         }
         catch (OperationCanceledException)
         {

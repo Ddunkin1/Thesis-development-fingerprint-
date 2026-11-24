@@ -1,10 +1,16 @@
-using libzkfpcsharp;
+﻿using libzkfpcsharp;
 
 namespace ChaqBridge;
 
 public sealed class ScannerLostException : Exception
 {
     public ScannerLostException() : base("Scanner is not connected.") { }
+}
+
+/// <summary>The scanner is open but the fingerprints are still being downloaded (a few seconds after start or re-plug).</summary>
+public sealed class ScannerStartingException : Exception
+{
+    public ScannerStartingException() : base("Loading fingerprints, please try again in a moment.") { }
 }
 
 public sealed record IdentifyResult(string Status, long? UserId = null, int? Score = null, int? FingerIndex = null);
@@ -47,6 +53,11 @@ public sealed class ScannerService : IDisposable
 
     // ---- state read by /status and the status window ----
     public bool Connected { get; private set; }
+    /// <summary>What Windows says: true = the USB scanner is plugged in (it may still be starting), false = unplugged, null = unknown.</summary>
+    public bool? UsbPresent { get; private set; }
+    /// <summary>True from start / SDK reset until the templates have been downloaded again. Scans are refused meanwhile,
+    /// otherwise a registered finger would be reported as "not recognized".</summary>
+    public volatile bool TemplatesPending = true;
     public string? LastError { get; private set; }
     public int TemplatesLoaded { get; private set; }
     public DateTime? LastScanAt { get; private set; }
@@ -61,23 +72,55 @@ public sealed class ScannerService : IDisposable
 
     public void Start() => Task.Run(MonitorLoopAsync);
 
-    /// <summary>Keeps the scanner connected: opens it when plugged in, reopens after it is unplugged.</summary>
+    /// <summary>Raised when the scanner connects (true) or disconnects (false); the status window shows a tray notification.</summary>
+    public event Action<bool>? ConnectionChanged;
+    /// <summary>Raised after the SDK was reset: the in-memory templates are gone and must be downloaded again.</summary>
+    public event Action? NeedsTemplates;
+
+    private const string UsbVendorId = "1B55";   // ZKTeco (the Live20R shows up as VID_1B55)
+    private bool? _lastUsb;
+    private int _openFailures;
+    private bool _needsReload = true;   // true at start: the first successful open also triggers a template download
+
+    /// <summary>
+    /// Keeps the scanner connected. Every 2 seconds it asks Windows whether the USB device is plugged in:
+    ///   unplugged  -> stop capturing, close the device and RESET the SDK (so a stale handle is never reused);
+    ///   plugged in -> initialise the SDK again, reopen the scanner and ask for the templates to be re-downloaded.
+    /// So after an accidental unplug it is usable again within a few seconds, with nobody touching the PC.
+    /// </summary>
     private async Task MonitorLoopAsync()
     {
         while (!_monitorCts.IsCancellationRequested)
         {
             try
             {
-                if (!_libReady) InitLibrary();
-                if (_libReady)
+                bool? usb = UsbPresence.IsVendorPresent(UsbVendorId);   // null = Windows could not tell
+                UsbPresent = usb;
+
+                if (usb == false)
                 {
-                    if (Connected && (_lost || zkfp2.GetDeviceCount() <= 0))
-                    {
-                        AppLog.Add("Scanner disconnected.");
-                        CloseDevice();
-                    }
-                    if (!Connected) TryOpenDevice();
+                    if (Connected) HandleRemoval();
+                    LastError = "Scanner unplugged. Plug the USB cable back in.";
                 }
+                else
+                {
+                    // Freshly re-plugged: never trust the SDK state from before the removal.
+                    if (_lastUsb == false && _libReady) ResetLibrary();
+                    if (Connected && _lost) HandleRemoval();
+                    if (!_libReady) InitLibrary();
+                    if (_libReady)
+                    {
+                        // only when Windows cannot tell: fall back to asking the SDK
+                        if (Connected && usb == null && zkfp2.GetDeviceCount() <= 0) HandleRemoval();
+                        if (!Connected && !TryOpenDevice() && usb == true && ++_openFailures >= 3)
+                        {
+                            AppLog.Add("Scanner is plugged in but would not open: resetting the driver.");
+                            ResetLibrary();
+                            _openFailures = 0;
+                        }
+                    }
+                }
+                _lastUsb = usb;
             }
             catch (Exception e)
             {
@@ -88,6 +131,31 @@ public sealed class ScannerService : IDisposable
         }
     }
 
+    /// <summary>The scanner went away: stop everything that uses it and start over from a clean SDK.</summary>
+    private void HandleRemoval()
+    {
+        AppLog.Add("Scanner disconnected.");
+        CloseDevice();
+        ResetLibrary();
+        ConnectionChanged?.Invoke(false);
+    }
+
+    /// <summary>Frees the SDK completely (matching cache + library). The next InitLibrary starts fresh.</summary>
+    private void ResetLibrary()
+    {
+        lock (_dbGate)
+        {
+            try { if (_db != IntPtr.Zero) zkfp2.DBFree(_db); } catch { }
+            _db = IntPtr.Zero;
+            _map.Clear();
+            TemplatesLoaded = 0;
+            try { zkfp2.Terminate(); } catch { }
+            _libReady = false;
+        }
+        _needsReload = true;
+        TemplatesPending = true;
+    }
+
     private void InitLibrary()
     {
         int r = zkfp2.Init();
@@ -96,19 +164,20 @@ public sealed class ScannerService : IDisposable
             LastError = $"ZKFinger library init failed (code {r}).";
             return;
         }
-        _db = zkfp2.DBInit();
-        if (_db == IntPtr.Zero) { LastError = "DBInit failed."; return; }
+        IntPtr db = zkfp2.DBInit();
+        if (db == IntPtr.Zero) { LastError = "DBInit failed."; return; }
+        lock (_dbGate) _db = db;
         _libReady = true;
         AppLog.Add("ZKFinger library ready.");
     }
 
-    private void TryOpenDevice()
+    private bool TryOpenDevice()
     {
         int count = zkfp2.GetDeviceCount();
-        if (count <= 0) { LastError = "No scanner detected. Plug in the Live20R."; return; }
+        if (count <= 0) { LastError = "No scanner detected. Plug in the Live20R."; return false; }
 
         _dev = zkfp2.OpenDevice(0);
-        if (_dev == IntPtr.Zero) { LastError = "Could not open the scanner (is another program using it?)."; return; }
+        if (_dev == IntPtr.Zero) { LastError = "Could not open the scanner (is another program using it?)."; return false; }
 
         // Image size parameters 1 = width, 2 = height (same as the demo).
         var pv = new byte[4]; int size = 4;
@@ -123,7 +192,11 @@ public sealed class ScannerService : IDisposable
         _capThread.Start();
         Connected = true;
         LastError = null;
+        _openFailures = 0;
         AppLog.Add($"Scanner connected ({_w}x{_h}).");
+        ConnectionChanged?.Invoke(true);
+        if (_needsReload) { _needsReload = false; NeedsTemplates?.Invoke(); }   // the SDK was reset: reload fingerprints
+        return true;
     }
 
     private void CloseDevice()
@@ -186,6 +259,7 @@ public sealed class ScannerService : IDisposable
             }
             TemplatesLoaded = loaded;
         }
+        TemplatesPending = false;   // the cache is filled: scanning may start
         return loaded;
     }
 
@@ -222,6 +296,13 @@ public sealed class ScannerService : IDisposable
         if (!Connected) throw new ScannerLostException();
     }
 
+    /// <summary>Connected AND fingerprints loaded; used before any scan that matches against the cache.</summary>
+    private void RequireReady()
+    {
+        RequireConnected();
+        if (TemplatesPending) throw new ScannerStartingException();
+    }
+
     /// <summary>Waits until a finger is captured. Returns (template, timedOut). Throws if the scanner disappears.</summary>
     private async Task<(byte[]? Template, bool TimedOut)> WaitForFingerAsync(int timeoutMs, CancellationToken ct)
     {
@@ -252,7 +333,7 @@ public sealed class ScannerService : IDisposable
     public Task<IdentifyResult> IdentifyAsync(int timeoutMs, CancellationToken external) =>
         RunExclusive(async ct =>
         {
-            RequireConnected();
+            RequireReady();
             await WaitForLiftAsync(timeoutMs, ct);
             var (tpl, timedOut) = await WaitForFingerAsync(timeoutMs, ct);
             if (tpl == null) return new IdentifyResult(timedOut ? "timeout" : "no_match");
@@ -262,6 +343,7 @@ public sealed class ScannerService : IDisposable
             bool found;
             lock (_dbGate)
             {
+                if (_db == IntPtr.Zero) throw new ScannerLostException();
                 r = zkfp2.DBIdentify(_db, tpl, ref fid, ref score);
                 found = r == zkfperrdef.ZKFP_ERR_OK && _map.TryGetValue(fid, out owner);
             }
@@ -285,7 +367,7 @@ public sealed class ScannerService : IDisposable
     public Task<EnrollResult> EnrollAsync(long? userId, CancellationToken external) =>
         RunExclusive(async ct =>
         {
-            RequireConnected();
+            RequireReady();
             EnrollActive = true; EnrollCount = 0; EnrollMessage = "Place your finger on the scanner.";
             try
             {
@@ -302,6 +384,7 @@ public sealed class ScannerService : IDisposable
                         // Reject a finger that already belongs to a different member (same check as the demo).
                         lock (_dbGate)
                         {
+                            if (_db == IntPtr.Zero) throw new ScannerLostException();
                             int fid = 0, score = 0;
                             if (zkfp2.DBIdentify(_db, tpl, ref fid, ref score) == zkfperrdef.ZKFP_ERR_OK && _map.TryGetValue(fid, out var o) && o.UserId != userId)
                                 return new EnrollResult(false, "already_registered", "This finger is already registered to another member.", null, o.UserId);
@@ -310,7 +393,7 @@ public sealed class ScannerService : IDisposable
                     else
                     {
                         int match;
-                        lock (_dbGate) match = zkfp2.DBMatch(_db, tpl, caps[^1]);
+                        lock (_dbGate) { if (_db == IntPtr.Zero) throw new ScannerLostException(); match = zkfp2.DBMatch(_db, tpl, caps[^1]); }
                         if (match <= 0) { EnrollMessage = "That was a different finger. Please use the same finger 3 times."; continue; }
                     }
                     caps.Add(tpl);
@@ -319,7 +402,7 @@ public sealed class ScannerService : IDisposable
 
                 var merged = new byte[TemplateBuf];
                 int len = TemplateBuf, r;
-                lock (_dbGate) r = zkfp2.DBMerge(_db, caps[0], caps[1], caps[2], merged, ref len);
+                lock (_dbGate) { if (_db == IntPtr.Zero) throw new ScannerLostException(); r = zkfp2.DBMerge(_db, caps[0], caps[1], caps[2], merged, ref len); }
                 if (r != zkfperrdef.ZKFP_ERR_OK || len <= 0)
                     return new EnrollResult(false, "poor_scan", $"Scans could not be combined (code {r}). Press firmly and keep the finger still, then try again.");
 
@@ -339,3 +422,4 @@ public sealed class ScannerService : IDisposable
         try { zkfp2.Terminate(); } catch { }
     }
 }
+

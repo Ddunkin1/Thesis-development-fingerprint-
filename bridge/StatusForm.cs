@@ -3,7 +3,11 @@ using System.Windows.Forms;
 
 namespace ChaqBridge;
 
-/// <summary>Small always-available window: scanner connected, templates loaded, last scan, recent log.</summary>
+/// <summary>
+/// Small status window: scanner connected, templates loaded, last scan, recent log.
+/// Closing the window only hides it to the tray (so it cannot be shut down by accident);
+/// the tray icon also pops up a message when the scanner is unplugged or plugged back in.
+/// </summary>
 public sealed class StatusForm : Form
 {
     private readonly ScannerService _scanner;
@@ -12,6 +16,8 @@ public sealed class StatusForm : Form
     private readonly Label _scannerLbl = new(), _tplLbl = new(), _scanLbl = new(), _syncLbl = new();
     private readonly TextBox _log = new();
     private readonly System.Windows.Forms.Timer _timer = new() { Interval = 1000 };
+    private readonly NotifyIcon _tray = new();
+    private bool _exiting;
 
     public StatusForm(BridgeConfig cfg, ScannerService scanner, SyncService sync)
     {
@@ -35,14 +41,54 @@ public sealed class StatusForm : Form
         _log.BackColor = Color.FromArgb(21, 15, 35); _log.ForeColor = Color.FromArgb(154, 144, 184); _log.BorderStyle = BorderStyle.None; _log.Font = new Font("Consolas", 9);
 
         Controls.Add(_log); Controls.Add(syncBtn); Controls.Add(info); Controls.Add(title);
+
+        // ---- tray icon: always there, even when the window is hidden ----
+        var menu = new ContextMenuStrip();
+        menu.Items.Add("Open status window", null, (_, _) => ShowWindow());
+        menu.Items.Add("Exit bridge (stops fingerprint check-in)", null, (_, _) => ExitBridge());
+        _tray.ContextMenuStrip = menu;
+        _tray.Icon = SystemIcons.Application;
+        _tray.Text = "CHAQ GYM Fingerprint Bridge";
+        _tray.DoubleClick += (_, _) => ShowWindow();
+        _tray.Visible = true;
+
+        FormClosing += (_, e) =>
+        {
+            if (_exiting || e.CloseReason != CloseReason.UserClosing) return;
+            e.Cancel = true;   // the X button hides the window instead of stopping the bridge
+            Hide();
+            _tray.ShowBalloonTip(3000, "Bridge is still running", "Fingerprint check-in keeps working. Use this icon to open or exit.", ToolTipIcon.Info);
+        };
+
+        // tell the front desk when the scanner is unplugged / plugged back in
+        _scanner.ConnectionChanged += connected =>
+        {
+            if (!IsHandleCreated) return;
+            BeginInvoke(() =>
+            {
+                if (connected) _tray.ShowBalloonTip(3000, "Scanner connected", "Fingerprint check-in is ready again.", ToolTipIcon.Info);
+                else _tray.ShowBalloonTip(6000, "Scanner unplugged!", "Check-in is paused. Plug the scanner's USB cable back in; it reconnects by itself.", ToolTipIcon.Warning);
+            });
+        };
+
         _timer.Tick += (_, _) => Refresh_();
         _timer.Start();
         Refresh_();
     }
 
+    private void ShowWindow() { Show(); WindowState = FormWindowState.Normal; Activate(); }
+
+    private void ExitBridge()
+    {
+        _exiting = true;
+        _tray.Visible = false;
+        _tray.Dispose();
+        Application.Exit();
+    }
+
     private void Refresh_()
     {
-        _scannerLbl.Text = _scanner.Connected ? "●  Scanner: connected" : "●  Scanner: NOT connected  (" + (_scanner.LastError ?? "starting…") + ")";
+        _scannerLbl.Text = _scanner.Connected ? (_scanner.TemplatesPending ? "●  Scanner: connected, loading fingerprints…" : "●  Scanner: connected") : "●  Scanner: NOT connected  (" + (_scanner.LastError ?? "starting…") + ")";
         _scannerLbl.ForeColor = _scanner.Connected ? Color.FromArgb(74, 222, 128) : Color.FromArgb(248, 113, 113);
         _tplLbl.Text = $"Templates loaded: {_scanner.TemplatesLoaded}";
         _scanLbl.Text = "Last scan: " + (_scanner.LastScanAt is { } t ? $"{t:HH:mm:ss} - {_scanner.LastScanResult}" : "-");

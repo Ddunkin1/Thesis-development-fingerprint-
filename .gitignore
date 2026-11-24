@@ -16,3 +16,5 @@ bridge/native/
 
 appsettings.local.json
 publish/
+
+bridge.log
