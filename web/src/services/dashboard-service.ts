@@ -1,26 +1,28 @@
-// Numbers for the admin dashboard.
+// Numbers for the admin dashboard ("Today").
 import { MANILA_TZ, addDays, todayManila } from "@/lib/time";
 import * as r from "@/data/reports";
 import { statusOf, type MembershipStatus } from "./membership-rules";
 
-const fmt = (d: Date) => new Intl.DateTimeFormat("en-PH", { timeZone: MANILA_TZ, hour: "numeric", minute: "2-digit", month: "short", day: "numeric" }).format(d);
+const timeOf = (d: Date) => new Intl.DateTimeFormat("en-PH", { timeZone: MANILA_TZ, hour: "numeric", minute: "2-digit" }).format(d);
+const dayOf = (d: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: MANILA_TZ }).format(d); // 'YYYY-MM-DD'
+const dayLabel = (d: Date) => new Intl.DateTimeFormat("en-PH", { timeZone: MANILA_TZ, month: "short", day: "numeric" }).format(d);
 
 export async function getDashboard() {
   const today = todayManila();
   const monthStart = today.slice(0, 8) + "01";
   const yesterday = addDays(today, -1);
-  const [counts, checkinsToday, walkinsToday, incomeToday, incomeMonth, recent, hours, attention, incomeYesterday, hoursToday, avg] = await Promise.all([
+  const [counts, checkinsToday, walkinsToday, incomeToday, incomeMonth, recent, hours, attention, incomeYesterday, hoursToday, stillIn] = await Promise.all([
     r.membershipCounts(today),
     r.checkinsOn(today),
     r.walkinsOn(today),
     r.incomeBetween(today, today),
     r.incomeBetween(monthStart, today),
-    r.recentAttendance(10),
+    r.recentAttendance(12),
     r.peakHours(addDays(today, -29), today), // last 30 days
     r.needsAttention(today),
     r.incomeBetween(yesterday, yesterday),
     r.peakHours(today, today),
-    r.avgSession(addDays(today, -29), today),
+    r.stillInCount(today),
   ]);
   const busiest = (rows: { h: number; n: string }[]) => rows.reduce<{ h: number; n: number } | null>((best, x) => (!best || Number(x.n) > best.n ? { h: x.h, n: Number(x.n) } : best), null);
   const hourText = (h: number) => `${h % 12 === 0 ? 12 : h % 12} ${h < 12 ? "AM" : "PM"}`;
@@ -31,19 +33,22 @@ export async function getDashboard() {
     today,
     members: counts,
     checkinsToday,
+    stillInGym: stillIn,                       // checked in today and not checked out yet
     walkinsToday,
     incomeToday,
     incomeMonth,
     incomeYesterday,
     peakHourToday: todayPeak ? hourText(todayPeak.h) : null,
-    avgWorkoutMinutes: avg.minutes,
-    avgWorkoutSessions: avg.sessions,
-    recent: recent.map((a) => ({
+    // the live feed: newest visits first, today's flagged so the screen can group them
+    feed: recent.map((a) => ({
       name: a.full_name,
       username: a.username,
-      checkIn: fmt(a.check_in),
-      checkOut: a.check_out ? fmt(a.check_out) : null,
+      isToday: dayOf(a.check_in) === today,
+      day: dayLabel(a.check_in),
+      checkIn: timeOf(a.check_in),
+      checkOut: a.check_out ? timeOf(a.check_out) : null,
       minutes: a.check_out ? Math.max(0, Math.round((a.check_out.getTime() - a.check_in.getTime()) / 60000)) : null,
+      sinceMin: a.check_out ? null : Math.max(0, Math.round((Date.now() - a.check_in.getTime()) / 60000)),
     })),
     peakHours: Array.from({ length: 24 }, (_, h) => ({ hour: h, count: byHour.get(h) ?? 0 })),
     attention: attention.map((a) => ({

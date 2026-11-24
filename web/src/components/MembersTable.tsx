@@ -1,5 +1,5 @@
 "use client";
-import { BellRing, Download, Fingerprint, Flame, Hourglass, KeyRound, MoreHorizontal, Pencil, RefreshCw, Search, Trash2, UserPlus, UsersRound, CheckCircle2 } from "lucide-react";
+import { Download, Fingerprint, Flame, Hourglass, KeyRound, MoreHorizontal, Pencil, RefreshCw, Search, Trash2, UserPlus, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -43,30 +43,18 @@ const STATUS: Record<Member["status"], { label: string; pill: string; dot: strin
   none: { label: "No plan", pill: "bg-slate-100 text-slate-700 dark:bg-slate-500/15 dark:text-slate-300", dot: "bg-slate-400" },
 };
 
-function SummaryCard({ label, value, unit, note, icon: Icon, tile, tone = "" }: { label: string; value: React.ReactNode; unit?: string; note: React.ReactNode; icon: React.ElementType; tile: string; tone?: string }) {
-  return (
-    <div className="rounded-xl border bg-card p-5 shadow-card">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="eyebrow">{label}</div>
-          <div className={`numeral mt-3 text-[3.25rem] ${tone}`}>{value}{unit && <span className="ml-1.5 font-display text-xl font-bold text-muted-foreground">{unit}</span>}</div>
-        </div>
-        <span className={`flex size-11 shrink-0 items-center justify-center rounded-xl ${tile}`}><Icon className="size-5" aria-hidden /></span>
-      </div>
-      <div className="mt-3 text-[0.8125rem] text-muted-foreground">{note}</div>
-    </div>
-  );
-}
-
-/** The page reads ?q= (set by the top-bar search) and restarts the screen when it changes. */
+/** The page reads ?q= (top-bar search) and ?status= (links on the dashboard) and restarts the screen when they change. */
 export function MembersTable() {
-  const initialQ = useSearchParams().get("q") ?? "";
-  return <MembersInner key={initialQ} initialQ={initialQ} />;
+  const sp = useSearchParams();
+  const initialQ = sp.get("q") ?? "";
+  const st = sp.get("status");
+  const initialFilter: Filter = st === "active" || st === "expiring" || st === "expired" ? st : "all";
+  return <MembersInner key={`${initialQ}|${initialFilter}`} initialQ={initialQ} initialFilter={initialFilter} />;
 }
 
-function MembersInner({ initialQ }: { initialQ: string }) {
+function MembersInner({ initialQ, initialFilter }: { initialQ: string; initialFilter: Filter }) {
   const [q, setQ] = useState(initialQ);
-  const [filter, setFilter] = useState<Filter>("all");
+  const [filter, setFilter] = useState<Filter>(initialFilter);
   const [sort, setSort] = useState<Sort>("expiry");
   const [rows, setRows] = useState<Member[] | null>(null);
   const [dialog, setDialog] = useState<Dialogs>(null);
@@ -130,18 +118,26 @@ function MembersInner({ initialQ }: { initialQ: string }) {
 
   return (
     <div className="min-w-0">
-      <PageHeader eyebrow="Directory & access" title="Members" description="Renew, edit, re-enroll fingerprints and review workout streaks.">
+      <PageHeader title="Members" description="Renew, edit, re-enroll fingerprints and check streaks.">
         <Link href="/api/admin/members?format=csv" prefetch={false} download className={buttonVariants({ variant: "outline", className: "rounded-full bg-card" })}><Download /> Export CSV</Link>
         <Link href="/admin/register" className={buttonVariants({ className: "rounded-full" })}><UserPlus /> New member</Link>
       </PageHeader>
 
       <BridgeBanner className="mb-5" />
 
-      <section aria-label="Summary" className="mb-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        <SummaryCard label="Active roster" value={count("active") + count("expiring")} tone="text-brand" icon={UsersRound} tile="bg-accent text-brand" note={`${all.length} member${all.length === 1 ? "" : "s"} in total`} />
-        <SummaryCard label="Passes due < 7 days" value={dueSoon} icon={BellRing} tile="bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-300" note={dueSoon ? "Ask them to renew at the desk" : "All accounts healthy"} />
-        <SummaryCard label="Fingerprints enrolled" value={`${enrolled}%`} tone="text-ok" icon={Fingerprint} tile="bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" note={`${all.filter((r) => r.fingers > 0).length} of ${all.length} members can scan in`} />
-        <SummaryCard label="Average streak" value={avgStreak.toFixed(1)} unit="DAYS" icon={Flame} tile="bg-accent text-brand" note="Across all members right now" />
+      <section aria-label="Summary" className="mb-6 grid grid-cols-2 divide-x divide-y rounded-xl border bg-card shadow-card md:grid-cols-4 md:divide-y-0">
+        {([
+          ["Active members", String(count("active") + count("expiring")), `${all.length} in total`, "text-brand"],
+          ["Due within 7 days", String(dueSoon), dueSoon ? "ask them to renew" : "nobody yet", dueSoon ? "text-warn" : ""],
+          ["Can scan in", `${enrolled}%`, `${all.filter((r) => r.fingers > 0).length} of ${all.length} have a fingerprint`, ""],
+          ["Average streak", avgStreak.toFixed(1), "days, across everyone", ""],
+        ] as const).map(([label, value, note, tone]) => (
+          <div key={label} className="px-6 py-5">
+            <div className={`numeral text-5xl ${tone}`}>{value}</div>
+            <div className="mt-2 text-sm font-medium">{label}</div>
+            <div className="text-[0.8125rem] text-muted-foreground">{note}</div>
+          </div>
+        ))}
       </section>
 
       <section className="mb-5 flex flex-wrap items-center gap-3 rounded-xl border bg-card p-3 shadow-card" aria-label="Filters">

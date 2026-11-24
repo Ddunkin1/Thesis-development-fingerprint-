@@ -118,6 +118,13 @@ Condensed for headlines and big numbers, and Plus Jakarta Sans for text. The tok
 Only real data is shown: the design mock-ups' decorative numbers (momentum index, hardware latency, facility audit, security badges)
 were left out on purpose.
 
+**Your own logo:** save the gym's logo as `web/public/logo.png` (a square image works best). The sidebar, sign-in and member screens
+pick it up automatically; until then a simple "CG" monogram is shown. To change the brand colour, edit `--primary`, `--brand` and
+`--brand-strong` in `web/src/app/globals.css`.
+
+The dashboard ("Today") is deliberately plain: one big number (who has checked in), a live list of who is in the gym, renewals due,
+the scanner, and busy hours. The three member counts link to the members list already filtered.
+
 ## Code map (for the thesis defense)
 
 | Layer | Folder | Job |

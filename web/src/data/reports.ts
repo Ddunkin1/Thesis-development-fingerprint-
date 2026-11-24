@@ -42,6 +42,12 @@ export async function checkinsOn(day: string) {
   return Number(r[0].n);
 }
 
+/** Members who checked in on `day` and have not checked out yet (i.e. probably still in the gym). */
+export async function stillInCount(day: string) {
+  const r = await query<{ n: string }>(`SELECT count(*) n FROM attendance WHERE check_out IS NULL AND ${dayOf("check_in")} = $1::date`, [day]);
+  return Number(r[0].n);
+}
+
 export async function walkinsOn(day: string) {
   const r = await query<{ n: string }>("SELECT count(*) n FROM walkin_sessions WHERE session_date = $1::date", [day]);
   return Number(r[0].n);
