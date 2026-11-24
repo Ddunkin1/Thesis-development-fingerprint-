@@ -1,0 +1,38 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- The ZKTeco native DLLs we ship are x64 (matches the working x64 SDK demo build). -->
+    <PlatformTarget>x64</PlatformTarget>
+    <Platforms>x64</Platforms>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+    <AssemblyName>ChaqBridge</AssemblyName>
+    <RootNamespace>ChaqBridge</RootNamespace>
+    <ApplicationHighDpiMode>SystemAware</ApplicationHighDpiMode>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Kestrel (embedded HTTP server) comes from the ASP.NET Core shared framework. -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Managed wrapper from the ZKTeco SDK (C#\lib\x64). -->
+    <Reference Include="libzkfpcsharp">
+      <HintPath>native\libzkfpcsharp.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <!-- NOTE: the native DLLs (libzkfp.dll etc.) are NOT copied next to the exe: copies in the app folder fail to init (code -2)
+         while the driver-installed ones in System32 work. native\ is kept only as a reference/backup. -->
+    <Content Include="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="appsettings.local.json" Condition="Exists('appsettings.local.json')" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>
+
+

@@ -1,0 +1,18 @@
+﻿# secrets
+.env
+.env.*
+!.env.example
+# build output
+bin/
+obj/
+node_modules/
+.next/
+out/
+# ZKTeco SDK DLLs (proprietary, copied from the SDK/driver install)
+bridge/native/
+*.dll
+.vs/
+.neon
+
+appsettings.local.json
+publish/
