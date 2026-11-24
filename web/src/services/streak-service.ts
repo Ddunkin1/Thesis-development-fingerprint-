@@ -1,7 +1,7 @@
 // Streak / badge / leaderboard orchestration. The RULES are in lib/streak-rules.ts and lib/badges.ts;
 // this file only loads data, calls the rules and saves the result.
 import { type Q, query } from "@/lib/db";
-import { diffDays, todayManila } from "@/lib/time";
+import { MANILA_TZ, addDays, diffDays, todayManila, weekStart } from "@/lib/time";
 import { BADGES, qualifyingBadges, type BadgeDef } from "@/lib/badges";
 import { effectiveCurrent, history, levelOf, replay, weekTiles, type HistoryDay, type Level, type Tile } from "@/lib/streak-rules";
 import * as attendance from "@/data/attendance";
@@ -48,8 +48,14 @@ export async function recordCheckIn(userId: number, today: string, q: Q): Promis
   await streaks.ensureStreakRow(userId, q);
   await streaks.saveStreak(userId, r.final, q);
 
+  // facts about THIS check-in for the time-based badges (Early Bird, Night Owl, Perfect Week, Weekend Warrior)
+  const wk = weekStart(today);
+  const hour = Number(new Intl.DateTimeFormat("en-GB", { timeZone: MANILA_TZ, hour: "2-digit", hourCycle: "h23" }).format(new Date()));
   const keys = qualifyingBadges({
     previousLast: previous, gapDays, streak: r.final.current, totalVisits: await attendance.visitCount(userId, q),
+    checkInHour: hour,
+    daysThisWeek: dates.filter((d) => d >= wk && d <= addDays(wk, 6)).length,
+    completedWeekend: diffDays(wk, today) === 6 && dates.includes(addDays(today, -1)), // Sunday, and Saturday was attended too
   });
   const newBadges: BadgeDef[] = [];
   for (const k of keys) if (await streaks.awardBadge(userId, k, q)) newBadges.push(BADGES[k]);

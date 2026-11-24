@@ -98,10 +98,14 @@ CORS only allows the origins in `AllowedOrigins`; other origins get 403.
 2. **Kiosk** (`/kiosk`) → fullscreen check-in screen; leave it open on the front-desk PC next to the bridge.
 3. **Members / Attendance / Reports / Leaderboard / Dashboard** in the admin menu.
 4. **Member app** (`/member`, built phone-first): members sign in with their own account (default password changed on first login) and see
-   - **Home:** a big streak number whose card gets hotter with the streak, this week's tiles, the next badge goal, their numbers, rank title
-     (Rookie, Regular, Grinder, Beast, Legend by total visits) and membership days left;
+   - **Home:** a big streak number whose card gets hotter with the streak, this week's tiles, a **monthly goal ring** (12 visits a month,
+     `web/src/lib/goals.ts`), the next badge goal, their numbers, rank title (Rookie, Regular, Grinder, Beast, Legend by total visits) and
+     membership days left. A full-screen **"New badge unlocked!"** celebration appears once per new badge;
    - **Board:** this month's top 10 by best streak (names shown as "Juan C."), their own rank and how far behind the person above;
-   - **Me:** badge collection (earned or locked with a hint), recent visits, a switch to hide from the leaderboard, theme, change password.
+   - **Me:** **"Your month" recap** (visits vs last month, best streak, hours trained, usual time of day), the badge collection (earned or
+     locked with a hint), recent visits, a switch to hide from the leaderboard, theme, change password.
+   - **10 badges** (`web/src/lib/badges.ts`): First Visit, 7-Day Fire, 30-Day Fire, 30 Visits, 100 Visits, Perfect Week, Weekend Warrior,
+     Early Bird (before 7 AM), Night Owl (9 PM or later) and Comeback. They are awarded automatically at check-in.
    Everything is read from their own session (a member can never see another member's data), and the admin pages are closed to members.
    It is ready to become an installable app (PWA) later: single column, tab bar, safe-area padding.
 5. **Theme:** Light / Dark / System switch at the bottom of the admin sidebar (also on the login page and the kiosk). It defaults to light and the choice is remembered per browser.

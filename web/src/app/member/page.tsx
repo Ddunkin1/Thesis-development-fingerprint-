@@ -3,6 +3,8 @@ import { Target } from "lucide-react";
 import { Brand } from "@/components/Brand";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { WeekTiles } from "@/components/WeekTiles";
+import { BadgeCelebration } from "@/components/member/BadgeCelebration";
+import { GoalCard } from "@/components/member/GoalCard";
 import { StreakHero } from "@/components/member/StreakHero";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -42,6 +44,8 @@ export default function MemberHome() {
 
           <StreakHero current={p.streak.current} level={p.streak.level} checkedInToday={p.checkedInToday} />
           <WeekTiles week={p.streak.week} />
+          <GoalCard goal={p.goal} />
+          <BadgeCelebration badges={p.badges} username={p.username} />
 
           {/* what to do next: always one clear goal */}
           {p.nextBadge && (

@@ -1,6 +1,8 @@
 // Everything the MEMBER screens need (home, leaderboard, "me"). Read-only except the leaderboard opt-out.
 // It only combines data that already exists: attendance, streaks, badges and the membership.
-import { MANILA_TZ, todayManila } from "@/lib/time";
+import { MANILA_TZ, addDays, todayManila } from "@/lib/time";
+import { goalProgress } from "@/lib/goals";
+import { replay } from "@/lib/streak-rules";
 import { BADGES } from "@/lib/badges";
 import { maskName, firstName } from "@/lib/names";
 import { rankFor } from "@/lib/ranks";
@@ -36,6 +38,12 @@ export async function getPortal(userId: number) {
     first_visit: { have: Math.min(totalVisits, 1), need: 1, hint: "Check in once", unit: "visit" },
     seven_day_fire: { have: Math.min(view.current, 7), need: 7, hint: "Reach a 7-day streak", unit: "day" },
     thirty_visits: { have: Math.min(totalVisits, 30), need: 30, hint: "Visit the gym 30 times", unit: "visit" },
+    thirty_day_fire: { have: Math.min(view.current, 30), need: 30, hint: "Reach a 30-day streak", unit: "day" },
+    hundred_visits: { have: Math.min(totalVisits, 100), need: 100, hint: "Visit the gym 100 times", unit: "visit" },
+    perfect_week: { have: view.week.filter((t) => t.attended).length, need: 7, hint: "Work out all 7 days of one week", unit: "day" },
+    weekend_warrior: { have: 0, need: 0, hint: "Work out on both Saturday and Sunday", unit: "" },
+    early_bird: { have: 0, need: 0, hint: "Check in before 7 AM", unit: "" },
+    night_owl: { have: 0, need: 0, hint: "Check in at 9 PM or later", unit: "" },
     comeback: { have: 0, need: 0, hint: "Come back after 14 or more days away", unit: "" },
   };
   const badges = Object.values(BADGES).map((b) => {
@@ -58,6 +66,22 @@ export async function getPortal(userId: number) {
     : null;
 
   const left = member.expiry_date ? daysLeft(member.expiry_date, today) : null;
+
+  // ---- "your month" recap: this month vs last month, trained time, best streak, usual time of day ----
+  const monthStart = today.slice(0, 8) + "01";
+  const lastMonthEnd = addDays(monthStart, -1);
+  const lastMonthStart = lastMonthEnd.slice(0, 8) + "01";
+  const [lastMonthVisits, train, usual, allDates] = await Promise.all([
+    attendance.visitsBetween(userId, lastMonthStart, lastMonthEnd),
+    attendance.trainingStats(userId, monthStart, today),
+    attendance.usualHour(userId, addDays(today, -60), today),
+    attendance.attendedDates(userId),
+  ]);
+  let bestThisMonth = 0;
+  for (const [d, info] of replay(allDates).days) if (d >= monthStart && d <= today) bestThisMonth = Math.max(bestThisMonth, info.streak);
+  const monthName = (iso: string) => new Intl.DateTimeFormat("en-PH", { timeZone: "UTC", month: "long" }).format(new Date(iso + "T00:00:00Z"));
+  const hourText = (h: number) => `${h % 12 === 0 ? 12 : h % 12} ${h < 12 ? "AM" : "PM"}`;
+
   return {
     firstName: firstName(user.full_name),
     fullName: user.full_name,
@@ -68,6 +92,18 @@ export async function getPortal(userId: number) {
     stats: { totalVisits, thisMonth, bestStreak: view.longest },
     nextBadge,
     badges,
+    goal: goalProgress(thisMonth, today),
+    recap: {
+      monthLabel: monthName(today),
+      lastMonthLabel: monthName(lastMonthEnd),
+      visits: thisMonth,
+      visitsLastMonth: lastMonthVisits,
+      bestStreak: bestThisMonth,
+      hours: Math.round(train.minutes / 6) / 10,          // one decimal
+      avgMinutes: train.sessions ? Math.round(train.minutes / train.sessions) : 0,
+      sessions: train.sessions,
+      usualTime: usual === null ? null : hourText(usual),
+    },
     membership: {
       status: (member.expiry_date ? statusOf(member.expiry_date, today) : "none") as MembershipStatus | "none",
       expiryDate: member.expiry_date,

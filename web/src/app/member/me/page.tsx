@@ -4,6 +4,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { BadgeIcon } from "@/components/BadgeIcon";
 import { LogoutButton } from "@/components/LogoutButton";
+import { MonthRecap } from "@/components/member/MonthRecap";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useApi } from "@/lib/use-api";
@@ -45,6 +46,8 @@ export default function MePage() {
         <div className="space-y-3"><Skeleton className="h-40 w-full rounded-2xl" /><Skeleton className="h-40 w-full rounded-2xl" />{error && <p role="alert" className="text-sm text-bad">{error}</p>}</div>
       ) : (
         <>
+          <MonthRecap recap={p.recap} />
+
           <section aria-label="Badges">
             <h2 className="eyebrow mb-3">Badges · {p.badges.filter((b) => b.earned).length} of {p.badges.length}</h2>
             <ul className="grid grid-cols-2 gap-3">

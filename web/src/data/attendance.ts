@@ -70,3 +70,24 @@ export async function recentVisits(userId: number, limit = 10, q: Q = query) {
     [userId, limit],
   );
 }
+
+/** Total minutes trained (finished sessions only) and how many sessions, in [from, to]. */
+export async function trainingStats(userId: number, from: string, to: string, q: Q = query) {
+  const rows = await q<{ mins: string; n: string }>(
+    `SELECT COALESCE(sum(extract(epoch FROM (check_out - check_in)) / 60), 0) AS mins, count(*) AS n
+       FROM attendance WHERE user_id = $1 AND check_out IS NOT NULL AND ${DAY} BETWEEN $2::date AND $3::date`,
+    [userId, from, to],
+  );
+  return { minutes: Math.round(Number(rows[0].mins)), sessions: Number(rows[0].n) };
+}
+
+/** The hour of day (Manila, 0-23) this member checks in most often in [from, to], or null with no visits. */
+export async function usualHour(userId: number, from: string, to: string, q: Q = query): Promise<number | null> {
+  const rows = await q<{ h: number }>(
+    `SELECT extract(hour FROM check_in AT TIME ZONE '${MANILA_TZ}')::int AS h, count(*) AS n
+       FROM attendance WHERE user_id = $1 AND ${DAY} BETWEEN $2::date AND $3::date
+      GROUP BY h ORDER BY n DESC, h LIMIT 1`,
+    [userId, from, to],
+  );
+  return rows[0]?.h ?? null;
+}
