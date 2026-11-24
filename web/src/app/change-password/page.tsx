@@ -1,4 +1,5 @@
 "use client";
+import { ArrowRight, Lock } from "lucide-react";
 import { useState } from "react";
 import { AuthFrame } from "@/components/AuthFrame";
 import { Button } from "@/components/ui/button";
@@ -25,14 +26,26 @@ export default function ChangePasswordPage() {
     window.location.href = data.role === "admin" ? "/admin" : "/member";
   }
 
+  const field = (id: string, label: string) => (
+    <div className="space-y-2">
+      <Label htmlFor={id} className="eyebrow !text-foreground">{label}</Label>
+      <div className="relative">
+        <Lock className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+        <Input id={id} name={id} type="password" required className="h-13 rounded-xl bg-card pl-11 text-base shadow-card" />
+      </div>
+    </div>
+  );
+
   return (
-    <AuthFrame title="New password" subtitle="Choose your own password before continuing: 8+ characters with letters and numbers.">
-      <form onSubmit={onSubmit} className="space-y-4">
-        <div className="space-y-1.5"><Label htmlFor="current">Current password</Label><Input id="current" name="current" type="password" required className="h-10" /></div>
-        <div className="space-y-1.5"><Label htmlFor="next">New password</Label><Input id="next" name="next" type="password" required className="h-10" /></div>
-        <div className="space-y-1.5"><Label htmlFor="confirm">Confirm new password</Label><Input id="confirm" name="confirm" type="password" required className="h-10" /></div>
-        {error && <p role="alert" className="text-sm text-bad">{error}</p>}
-        <Button type="submit" disabled={busy} className="h-10 w-full text-base font-semibold">{busy ? "Saving..." : "Change password"}</Button>
+    <AuthFrame eyebrow="Account security" title="New password" subtitle="Choose your own password before continuing: at least 8 characters, with letters and numbers.">
+      <form onSubmit={onSubmit} className="space-y-5">
+        {field("current", "Current password")}
+        {field("next", "New password")}
+        {field("confirm", "Confirm new password")}
+        {error && <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm font-medium text-bad dark:bg-red-500/10">{error}</p>}
+        <Button type="submit" disabled={busy} className="h-14 w-full rounded-xl font-display text-xl font-extrabold uppercase tracking-wide shadow-card">
+          {busy ? "Saving…" : <>Change password <ArrowRight className="size-5" /></>}
+        </Button>
       </form>
     </AuthFrame>
   );

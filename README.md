@@ -104,7 +104,15 @@ CORS only allows the origins in `AllowedOrigins`; other origins get 403.
    - **Me:** badge collection (earned or locked with a hint), recent visits, a switch to hide from the leaderboard, theme, change password.
    Everything is read from their own session (a member can never see another member's data), and the admin pages are closed to members.
    It is ready to become an installable app (PWA) later: single column, tab bar, safe-area padding.
-5. **Theme:** Light / Dark / System switch at the bottom of the admin sidebar (also on the login page and the kiosk). It defaults to dark and the choice is remembered per browser.
+5. **Theme:** Light / Dark / System switch at the bottom of the admin sidebar (also on the login page and the kiosk). It defaults to light and the choice is remembered per browser.
+
+## Design
+
+The look follows the "Athletic Modernist Operational" design system (the `stitch_modern_gym_admin_dashboard` folder): a cool slate canvas
+with white cards and hairline borders, electric indigo for actions and streaks, emerald for "ready", orange for "expiring soon", Barlow
+Condensed for headlines and big numbers, and Plus Jakarta Sans for text. The tokens live in one place, `web/src/app/globals.css`.
+Only real data is shown: the design mock-ups' decorative numbers (momentum index, hardware latency, facility audit, security badges)
+were left out on purpose.
 
 ## Code map (for the thesis defense)
 

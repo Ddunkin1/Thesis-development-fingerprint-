@@ -8,6 +8,10 @@ export interface BridgeStatus {
   scannerPluggedIn?: boolean | null; // Windows sees the scanner (it may still be reconnecting)
   scannerReady?: boolean;            // connected AND fingerprints loaded: only then can check-in work
   lastSyncOk?: boolean;              // last fingerprint download from the website worked
+  lastScanAt?: string | null;        // when the last finger was scanned
+  lastScan?: string;                 // what that scan was ("Matched user 4", "No match", ...)
+  lastSyncAt?: string | null;        // when fingerprints were last downloaded
+  lastSyncMessage?: string;
   templatesLoaded: number;
 }
 

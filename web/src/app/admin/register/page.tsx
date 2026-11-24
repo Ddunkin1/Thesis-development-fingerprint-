@@ -1,11 +1,13 @@
-import { PageHeader } from "@/components/PageHeader";
+import { Suspense } from "react";
 import { RegisterForm } from "@/components/RegisterForm";
 
+// RegisterForm reads ?mode=walkin (used by the dashboard's "Quick walk-in" button), so it sits in Suspense.
 export default function RegisterPage() {
   return (
     <main>
-      <PageHeader title="Register" description="Add a monthly member with a fingerprint, or log a walk-in for today." />
-      <RegisterForm />
+      <Suspense>
+        <RegisterForm />
+      </Suspense>
     </main>
   );
 }

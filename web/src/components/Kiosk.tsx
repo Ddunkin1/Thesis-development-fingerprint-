@@ -62,12 +62,12 @@ export function Kiosk() {
   }, []);
 
   const bg = !result ? (offline ? (bridgeState === "reconnecting" ? "bg-[#3b2a06]" : "bg-[#3b0a0a]") : "bg-background")
-    : result.status === "checked_in" ? "bg-[#4c1d95]"
-    : result.status === "checked_out" ? "bg-[#17171b]"
+    : result.status === "checked_in" ? "bg-[#312e81]"
+    : result.status === "checked_out" ? "bg-[#0f172a]"
     : result.status === "already" ? "bg-[#4a3203]"
     : result.status === "expired" ? "bg-[#7f1d1d]"
     : result.status === "session_expired" || result.status === "server_error" ? "bg-[#3b2a06]"
-    : "bg-[#1c1c22]";
+    : "bg-[#1e293b]";
 
   const time = now ? new Intl.DateTimeFormat("en-PH", { timeZone: "Asia/Manila", hour: "numeric", minute: "2-digit", hour12: true }).format(now) : "";
   const date = now ? new Intl.DateTimeFormat("en-PH", { timeZone: "Asia/Manila", weekday: "long", month: "long", day: "numeric" }).format(now) : "";
@@ -177,7 +177,7 @@ function Welcome({ r }: { r: Visit }) {
             <span className="eyebrow mb-[2vw] !text-xl !text-white/80">day streak</span>
           </div>
           {milestone && (
-            <div className="pop-in mb-3 flex items-center gap-3 rounded-md bg-white px-5 py-3 text-[#4c1d95]">
+            <div className="pop-in mb-3 flex items-center gap-3 rounded-md bg-white px-5 py-3 text-[#312e81]">
               <span className="font-display text-[6vw] font-extrabold uppercase leading-none md:text-[2.6vw]">{streak.current}-day milestone!</span>
             </div>
           )}

@@ -21,6 +21,7 @@ export interface MemberView {
   fingers: number;
   streak: number;
   paid: number; // net money paid (payments minus refunds)
+  joinedOn: string; // "Nov 25, 2026"
 }
 
 export class MemberError extends Error {}
@@ -39,6 +40,7 @@ export async function listMembers(search: string): Promise<MemberView[]> {
     fingers: Number(r.fingers),
     streak: r.streak,
     paid: Number(r.paid),
+    joinedOn: new Intl.DateTimeFormat("en-PH", { timeZone: "Asia/Manila", month: "short", day: "numeric", year: "numeric" }).format(new Date(r.created_at)),
   }));
 }
 

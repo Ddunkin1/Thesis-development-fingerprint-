@@ -1,16 +1,22 @@
 // /api/admin/members
-//   GET  ?q=search            -> list members with their membership status
+//   GET  ?q=search[&format=csv] -> list members with their membership status (or download them as CSV)
 //   POST {fullName, consent, fingers[], walkinId?} (the fee is fixed on the server) -> register a monthly member (admin only)
 import { z } from "zod";
 import { requireRole, json } from "@/lib/guard";
+import { csvResponse } from "@/lib/csv";
 import { RegistrationError, registerMonthlyMember } from "@/services/registration-service";
 import { listMembers } from "@/services/member-service";
 
 export async function GET(req: Request) {
   const auth = await requireRole(req, "admin");
   if (auth.error) return auth.error;
-  const q = new URL(req.url).searchParams.get("q") ?? "";
-  return json({ members: await listMembers(q.slice(0, 100)) });
+  const sp = new URL(req.url).searchParams;
+  const members = await listMembers((sp.get("q") ?? "").slice(0, 100));
+  if (sp.get("format") === "csv") {
+    return csvResponse("members.csv", ["Name", "Username", "Status", "Expires", "Days left", "Current streak", "Fingerprints", "Joined"],
+      members.map((m) => [m.fullName, m.username, m.status, m.expiryDate ?? "", m.daysLeft ?? "", m.streak, m.fingers, m.joinedOn]));
+  }
+  return json({ members });
 }
 
 const Body = z.object({

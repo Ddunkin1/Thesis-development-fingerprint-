@@ -56,11 +56,21 @@ export async function incomeBetween(from: string, to: string) {
 }
 
 export async function recentAttendance(limit = 10) {
-  return query<{ full_name: string; check_in: Date; check_out: Date | null }>(
-    `SELECT u.full_name, a.check_in, a.check_out FROM attendance a JOIN users u ON u.id = a.user_id
+  return query<{ full_name: string; username: string; check_in: Date; check_out: Date | null }>(
+    `SELECT u.full_name, u.username, a.check_in, a.check_out FROM attendance a JOIN users u ON u.id = a.user_id
       ORDER BY a.check_in DESC LIMIT $1`,
     [limit],
   );
+}
+
+/** Average finished workout length in minutes (check-in to check-out) over a date range. */
+export async function avgSession(from: string, to: string) {
+  const r = await query<{ m: string; n: string }>(
+    `SELECT COALESCE(avg(extract(epoch FROM (check_out - check_in)) / 60), 0) AS m, count(*) AS n
+       FROM attendance WHERE check_out IS NOT NULL AND ${dayOf("check_in")} BETWEEN $1::date AND $2::date`,
+    [from, to],
+  );
+  return { minutes: Math.round(Number(r[0].m)), sessions: Number(r[0].n) };
 }
 
 /** Check-ins per hour of the day (Manila time) over a date range. */

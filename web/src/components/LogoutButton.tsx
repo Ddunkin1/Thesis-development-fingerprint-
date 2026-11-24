@@ -3,16 +3,17 @@ import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
-export function LogoutButton({ className }: { className?: string }) {
+/** Ends the session. `iconOnly` is the small door icon used in the sidebar user card. */
+export function LogoutButton({ className, iconOnly = false }: { className?: string; iconOnly?: boolean }) {
   const router = useRouter();
-  return (
-    <Button variant="ghost" size="sm" className={className}
-      onClick={async () => {
-        await fetch("/api/auth/logout", { method: "POST" });
-        router.replace("/login");
-        router.refresh();
-      }}>
-      <LogOut /> Sign out
-    </Button>
+  async function logout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.replace("/login");
+    router.refresh();
+  }
+  return iconOnly ? (
+    <Button variant="ghost" size="icon-sm" className={className} onClick={logout} aria-label="Sign out" title="Sign out"><LogOut /></Button>
+  ) : (
+    <Button variant="ghost" size="sm" className={className} onClick={logout}><LogOut /> Sign out</Button>
   );
 }

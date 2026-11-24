@@ -1,12 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Barlow_Condensed, Geist, Geist_Mono } from "next/font/google";
+import { Barlow_Condensed, Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
+// Body text: Plus Jakarta Sans (open, very legible for names, payments and dense tables).
+const jakarta = Plus_Jakarta_Sans({ variable: "--font-jakarta", subsets: ["latin"], weight: ["400", "500", "600", "700", "800"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
-// Condensed athletic display face for headings, counters and the kiosk "scoreboard".
+// Condensed athletic display face for headlines, big numbers and the kiosk "scoreboard".
 const display = Barlow_Condensed({ variable: "--font-display", subsets: ["latin"], weight: ["500", "600", "700", "800"] });
 
 export const metadata: Metadata = {
@@ -15,12 +16,12 @@ export const metadata: Metadata = {
 };
 export const viewport: Viewport = {
   viewportFit: "cover", // use the whole phone screen, including behind the notch (the member tab bar adds safe-area padding)
-  themeColor: [{ media: "(prefers-color-scheme: light)", color: "#f6f6f9" }, { media: "(prefers-color-scheme: dark)", color: "#09090b" }],
+  themeColor: [{ media: "(prefers-color-scheme: light)", color: "#f8fafc" }, { media: "(prefers-color-scheme: dark)", color: "#0b1120" }],
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable} ${display.variable} h-full`}>
+    <html lang="en" suppressHydrationWarning className={`${jakarta.variable} ${geistMono.variable} ${display.variable} h-full`}>
       <body className="flex min-h-full flex-col">
         <ThemeProvider>
           {children}

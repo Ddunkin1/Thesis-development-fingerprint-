@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/PageHeader";
 export default function LeaderboardPage() {
   return (
     <main>
-      <PageHeader title="Leaderboard" description="Top streaks of the month." />
+      <PageHeader eyebrow="Monthly ranking" title="Leaderboard" description="Top streaks of the month." />
       <Leaderboard />
     </main>
   );

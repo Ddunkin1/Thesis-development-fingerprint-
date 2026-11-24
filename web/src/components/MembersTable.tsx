@@ -1,5 +1,7 @@
 "use client";
-import { Flame, KeyRound, MoreHorizontal, Pencil, RefreshCw, Search, Trash2, Fingerprint } from "lucide-react";
+import { BellRing, Download, Fingerprint, Flame, Hourglass, KeyRound, MoreHorizontal, Pencil, RefreshCw, Search, Trash2, UserPlus, UsersRound, CheckCircle2 } from "lucide-react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { StreakView } from "@/services/streak-service";
@@ -10,8 +12,9 @@ import { BridgeBanner } from "./BridgeBanner";
 import { ConsistencyGrid } from "./ConsistencyGrid";
 import { FingerEnroll } from "./FingerEnroll";
 import { WeekTiles } from "./WeekTiles";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { PageHeader } from "./PageHeader";
+import { initials } from "./admin/TopBar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -22,22 +25,49 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 
 interface Member {
   id: number; fullName: string; username: string; expiryDate: string | null; daysLeft: number | null;
-  status: "active" | "expiring" | "expired" | "none"; fingers: number; streak: number; paid: number;
+  status: "active" | "expiring" | "expired" | "none"; fingers: number; streak: number; paid: number; joinedOn: string;
 }
 type Dialogs =
   | { kind: "renew" | "edit" | "reenroll" | "reset" | "delete" | "streak"; m: Member }
   | { kind: "info"; title: string; text: string }
   | null;
 
-const STATUS: Record<Member["status"], { label: string; cls: string }> = {
-  active: { label: "Active", cls: "border-ok/50 text-ok" },
-  expiring: { label: "Expiring soon", cls: "border-warn/50 text-warn" },
-  expired: { label: "Expired", cls: "border-bad/50 text-bad" },
-  none: { label: "No plan", cls: "text-muted-foreground" },
+type Filter = "all" | "active" | "expiring" | "expired";
+type Sort = "expiry" | "name" | "streak";
+
+// status pills from the design: soft tinted fill + a dot
+const STATUS: Record<Member["status"], { label: string; pill: string; dot: string }> = {
+  active: { label: "Active", pill: "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300", dot: "bg-emerald-500" },
+  expiring: { label: "Expiring soon", pill: "bg-orange-100 text-orange-800 dark:bg-orange-500/15 dark:text-orange-300", dot: "bg-orange-500" },
+  expired: { label: "Expired", pill: "bg-red-100 text-red-800 dark:bg-red-500/15 dark:text-red-300", dot: "bg-red-500" },
+  none: { label: "No plan", pill: "bg-slate-100 text-slate-700 dark:bg-slate-500/15 dark:text-slate-300", dot: "bg-slate-400" },
 };
 
+function SummaryCard({ label, value, unit, note, icon: Icon, tile, tone = "" }: { label: string; value: React.ReactNode; unit?: string; note: React.ReactNode; icon: React.ElementType; tile: string; tone?: string }) {
+  return (
+    <div className="rounded-xl border bg-card p-5 shadow-card">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="eyebrow">{label}</div>
+          <div className={`numeral mt-3 text-[3.25rem] ${tone}`}>{value}{unit && <span className="ml-1.5 font-display text-xl font-bold text-muted-foreground">{unit}</span>}</div>
+        </div>
+        <span className={`flex size-11 shrink-0 items-center justify-center rounded-xl ${tile}`}><Icon className="size-5" aria-hidden /></span>
+      </div>
+      <div className="mt-3 text-[0.8125rem] text-muted-foreground">{note}</div>
+    </div>
+  );
+}
+
+/** The page reads ?q= (set by the top-bar search) and restarts the screen when it changes. */
 export function MembersTable() {
-  const [q, setQ] = useState("");
+  const initialQ = useSearchParams().get("q") ?? "";
+  return <MembersInner key={initialQ} initialQ={initialQ} />;
+}
+
+function MembersInner({ initialQ }: { initialQ: string }) {
+  const [q, setQ] = useState(initialQ);
+  const [filter, setFilter] = useState<Filter>("all");
+  const [sort, setSort] = useState<Sort>("expiry");
   const [rows, setRows] = useState<Member[] | null>(null);
   const [dialog, setDialog] = useState<Dialogs>(null);
   const [value, setValue] = useState("");       // text/amount field inside dialogs
@@ -48,12 +78,12 @@ export function MembersTable() {
   const price = useMembershipPrice();
   const [refundOn, setRefundOn] = useState(false); // delete dialog: member backed out and got their money back
 
-  const load = useCallback(async (search: string) => {
-    const res = await fetch(`/api/admin/members?q=${encodeURIComponent(search)}`);
+  const load = useCallback(async () => {
+    const res = await fetch("/api/admin/members");
     if (res.ok) setRows((await res.json()).members);
   }, []);
 
-  useEffect(() => { const t = setTimeout(() => load(q), 250); return () => clearTimeout(t); }, [q, load]);
+  useEffect(() => { const t = setTimeout(load, 0); return () => clearTimeout(t); }, [load]);
 
   function open(d: Dialogs, initial = "") {
     setDialog(d); setValue(initial); setTemplate(null); setError(""); setRefundOn(false);
@@ -72,46 +102,115 @@ export function MembersTable() {
     setBusy(false);
     if (!res.ok) { setError(data.error ?? "Something went wrong."); return; }
     if (resync) bridge.sync();
-    await load(q);
+    await load();
     if (after) after(data); else setDialog(null);
   }
 
   const m = dialog && dialog.kind !== "info" ? dialog.m : null;
 
-  return (
-    <div>
-      <BridgeBanner className="mb-4" />
-      <div className="relative mb-4 max-w-sm">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input className="h-10 pl-9" placeholder="Search name or username..." value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search members" />
-      </div>
+  // ---- numbers for the four summary cards and the filter chips (all from the real member list) ----
+  const all = rows ?? [];
+  const count = (st: Member["status"]) => all.filter((r) => r.status === st).length;
+  const dueSoon = all.filter((r) => r.daysLeft !== null && r.daysLeft >= 0 && r.daysLeft <= 7).length;
+  const enrolled = all.length ? Math.round((all.filter((r) => r.fingers > 0).length / all.length) * 100) : 0;
+  const avgStreak = all.length ? all.reduce((n, r) => n + r.streak, 0) / all.length : 0;
 
-      <div className="rounded-xl border bg-card">
+  const needle = q.trim().toLowerCase();
+  const visible = all
+    .filter((r) => (filter === "all" ? true : r.status === filter))
+    .filter((r) => !needle || r.fullName.toLowerCase().includes(needle) || r.username.toLowerCase().includes(needle))
+    .sort((a, b) => sort === "name" ? a.fullName.localeCompare(b.fullName)
+      : sort === "streak" ? b.streak - a.streak
+      : (a.expiryDate ?? "9999").localeCompare(b.expiryDate ?? "9999"));
+
+  const CHIPS: { key: Filter; label: string; n: number }[] = [
+    { key: "all", label: "All", n: all.length }, { key: "active", label: "Active", n: count("active") },
+    { key: "expiring", label: "Expiring soon", n: count("expiring") }, { key: "expired", label: "Expired", n: count("expired") },
+  ];
+
+  return (
+    <div className="min-w-0">
+      <PageHeader eyebrow="Directory & access" title="Members" description="Renew, edit, re-enroll fingerprints and review workout streaks.">
+        <Link href="/api/admin/members?format=csv" prefetch={false} download className={buttonVariants({ variant: "outline", className: "rounded-full bg-card" })}><Download /> Export CSV</Link>
+        <Link href="/admin/register" className={buttonVariants({ className: "rounded-full" })}><UserPlus /> New member</Link>
+      </PageHeader>
+
+      <BridgeBanner className="mb-5" />
+
+      <section aria-label="Summary" className="mb-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+        <SummaryCard label="Active roster" value={count("active") + count("expiring")} tone="text-brand" icon={UsersRound} tile="bg-accent text-brand" note={`${all.length} member${all.length === 1 ? "" : "s"} in total`} />
+        <SummaryCard label="Passes due < 7 days" value={dueSoon} icon={BellRing} tile="bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-300" note={dueSoon ? "Ask them to renew at the desk" : "All accounts healthy"} />
+        <SummaryCard label="Fingerprints enrolled" value={`${enrolled}%`} tone="text-ok" icon={Fingerprint} tile="bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" note={`${all.filter((r) => r.fingers > 0).length} of ${all.length} members can scan in`} />
+        <SummaryCard label="Average streak" value={avgStreak.toFixed(1)} unit="DAYS" icon={Flame} tile="bg-accent text-brand" note="Across all members right now" />
+      </section>
+
+      <section className="mb-5 flex flex-wrap items-center gap-3 rounded-xl border bg-card p-3 shadow-card" aria-label="Filters">
+        <div className="relative w-full min-w-56 sm:w-72">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input className="h-10 rounded-full bg-accent/50 pl-10" placeholder="Search name or username…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search members" />
+        </div>
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Status filter">
+          {CHIPS.map((c) => (
+            <button key={c.key} type="button" onClick={() => setFilter(c.key)} aria-pressed={filter === c.key}
+              className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${filter === c.key ? "bg-primary text-primary-foreground shadow-card" : "bg-accent text-foreground/80 hover:text-foreground"}`}>
+              {c.label} ({c.n})
+            </button>
+          ))}
+        </div>
+        <label className="ml-auto flex items-center gap-2 text-sm">
+          <span className="eyebrow">Sort by</span>
+          <select value={sort} onChange={(e) => setSort(e.target.value as Sort)}
+            className="h-10 rounded-lg border bg-accent/50 px-3 text-sm font-medium outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30">
+            <option value="expiry">Expiry date (nearest)</option><option value="name">Name (A to Z)</option><option value="streak">Longest streak</option>
+          </select>
+        </label>
+      </section>
+
+      <div className="overflow-hidden rounded-xl border bg-card shadow-card">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-accent/50">
             <TableRow>
               <TableHead>Member</TableHead><TableHead>Status</TableHead><TableHead className="hidden sm:table-cell">Expires</TableHead>
-              <TableHead className="hidden text-right md:table-cell">Streak</TableHead><TableHead className="hidden text-right md:table-cell">Prints</TableHead><TableHead className="w-0" />
+              <TableHead className="hidden md:table-cell">Streak</TableHead><TableHead className="hidden md:table-cell">Prints</TableHead><TableHead className="w-0" />
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows === null && Array.from({ length: 3 }, (_, i) => <TableRow key={i}><TableCell colSpan={6}><Skeleton className="h-8 w-full" /></TableCell></TableRow>)}
-            {rows?.length === 0 && <TableRow><TableCell colSpan={6} className="py-8 text-center text-muted-foreground">No members found.</TableCell></TableRow>}
-            {rows?.map((r) => (
+            {rows === null && Array.from({ length: 3 }, (_, i) => <TableRow key={i}><TableCell colSpan={6}><Skeleton className="h-10 w-full" /></TableCell></TableRow>)}
+            {rows !== null && visible.length === 0 && <TableRow><TableCell colSpan={6} className="py-10 text-center text-muted-foreground">No members match. Try another filter.</TableCell></TableRow>}
+            {visible.map((r) => (
               <TableRow key={r.id}>
                 <TableCell>
-                  <div className="font-medium">{r.fullName}</div>
-                  <div className="font-mono text-xs text-muted-foreground">{r.username}</div>
+                  <div className="flex items-center gap-3.5">
+                    <span className="relative flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+                      {initials(r.fullName)}
+                      <span className={`absolute -bottom-0.5 -right-0.5 size-3.5 rounded-full border-2 border-card ${STATUS[r.status].dot}`} />
+                    </span>
+                    <div className="min-w-0">
+                      <div className="truncate font-semibold">{r.fullName}</div>
+                      <div className="truncate text-[0.8125rem] text-muted-foreground">@{r.username} · Joined {r.joinedOn}</div>
+                    </div>
+                  </div>
                 </TableCell>
-                <TableCell><Badge variant="outline" className={STATUS[r.status].cls}>{STATUS[r.status].label}</Badge></TableCell>
-                <TableCell className="hidden tabular-nums sm:table-cell">
-                  {r.expiryDate ?? "-"}
-                  {r.daysLeft !== null && r.daysLeft >= 0 && <div className="text-xs text-muted-foreground">{r.daysLeft} day(s) left</div>}
+                <TableCell>
+                  <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-[0.8125rem] font-semibold ${STATUS[r.status].pill}`}>
+                    <span className={`size-2 rounded-full ${STATUS[r.status].dot}`} />{STATUS[r.status].label}
+                  </span>
                 </TableCell>
-                <TableCell className="hidden text-right md:table-cell">
-                  {r.streak > 0 ? <span className="numeral inline-flex items-center gap-1 text-xl text-brand"><Flame className="size-4" />{r.streak}</span> : <span className="text-muted-foreground">-</span>}
+                <TableCell className="hidden sm:table-cell">
+                  <div className="font-semibold tabular-nums">{r.expiryDate ?? "-"}</div>
+                  {r.daysLeft !== null && r.daysLeft >= 0 && <div className="mt-0.5 flex items-center gap-1 text-[0.8125rem] text-brand"><Hourglass className="size-3.5" />{r.daysLeft} day{r.daysLeft === 1 ? "" : "s"} left</div>}
                 </TableCell>
-                <TableCell className="hidden text-right tabular-nums md:table-cell">{r.fingers}</TableCell>
+                <TableCell className="hidden md:table-cell">
+                  <div className="flex items-center gap-2.5">
+                    <span className={`flex size-9 items-center justify-center rounded-lg ${r.streak > 0 ? "bg-accent text-brand" : "bg-muted text-muted-foreground"}`}><Flame className="size-4" /></span>
+                    <div><span className="numeral text-2xl">{r.streak}</span> <span className="font-display text-sm font-bold text-muted-foreground">DAY{r.streak === 1 ? "" : "S"}</span></div>
+                  </div>
+                </TableCell>
+                <TableCell className="hidden md:table-cell">
+                  {r.fingers > 0
+                    ? <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1 text-[0.8125rem] font-semibold text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300"><CheckCircle2 className="size-3.5" />{r.fingers} enrolled</span>
+                    : <span className="inline-flex rounded-lg bg-red-50 px-2.5 py-1 text-[0.8125rem] font-semibold text-red-800 dark:bg-red-500/15 dark:text-red-300">None enrolled</span>}
+                </TableCell>
                 <TableCell>
                   <div className="flex items-center justify-end gap-1.5">
                     <Button size="sm" onClick={() => open({ kind: "renew", m: r })}><RefreshCw /> Renew</Button>
@@ -132,6 +231,7 @@ export function MembersTable() {
             ))}
           </TableBody>
         </Table>
+        <div className="border-t bg-accent/40 px-5 py-3 text-sm text-muted-foreground">Showing {visible.length} of {all.length} member{all.length === 1 ? "" : "s"}</div>
       </div>
 
       <Dialog open={dialog !== null} onOpenChange={(o) => { if (!o) close(); }}>

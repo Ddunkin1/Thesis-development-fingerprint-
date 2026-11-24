@@ -1,6 +1,6 @@
 "use client";
 import { useSyncExternalStore } from "react";
-import { bridge } from "./bridge-client";
+import { bridge, type BridgeStatus } from "./bridge-client";
 
 /**
  *  ok          bridge running, scanner connected AND fingerprints loaded (check-in works)
@@ -35,8 +35,13 @@ export const PROBLEM_TEXT: Record<"scanner_off" | "reconnecting" | "sync_error" 
 // The sidebar light, the banner and the kiosk all read this same value, so they always change together and the
 // browser asks the bridge only once per tick. It polls every second while something is wrong (so the short
 // "reconnecting" step is never missed) and every 3 seconds when all is fine.
+/** The raw numbers behind the state (for the dashboard "scanner status" card). null = the bridge is not answering. */
+export type BridgeInfo = Pick<BridgeStatus, "templatesLoaded" | "lastScanAt" | "lastScan" | "lastSyncAt" | "lastSyncOk" | "lastSyncMessage"> | null;
+
 let current: BridgeState = "loading";
+let info: BridgeInfo = null;
 const listeners = new Set<() => void>();
+const infoListeners = new Set<() => void>();
 let timer: ReturnType<typeof setTimeout> | undefined;
 let running = false;
 
@@ -49,18 +54,27 @@ async function poll() {
   else if (!s.scannerConnected) next = s.scannerPluggedIn === true ? "reconnecting" : "scanner_off";
   else next = s.lastSyncOk === false ? "sync_error" : "reconnecting"; // connected, fingerprints still loading
   if (next !== current) { current = next; listeners.forEach((l) => l()); }
+  info = s.ok ? { templatesLoaded: s.templatesLoaded, lastScanAt: s.lastScanAt, lastScan: s.lastScan, lastSyncAt: s.lastSyncAt, lastSyncOk: s.lastSyncOk, lastSyncMessage: s.lastSyncMessage } : null;
+  infoListeners.forEach((l) => l());
   timer = setTimeout(poll, next === "ok" ? 3000 : 1000);
 }
 
-function subscribe(listener: () => void) {
-  listeners.add(listener);
+function subscribeTo(set: Set<() => void>, listener: () => void) {
+  set.add(listener);
   if (!running) { running = true; poll(); }
   return () => {
-    listeners.delete(listener);
-    if (listeners.size === 0) { running = false; clearTimeout(timer); }
+    set.delete(listener);
+    if (listeners.size === 0 && infoListeners.size === 0) { running = false; clearTimeout(timer); }
   };
 }
+const subscribe = (l: () => void) => subscribeTo(listeners, l);
+const subscribeInfo = (l: () => void) => subscribeTo(infoListeners, l);
 
 export function useBridgeStatus(): BridgeState {
   return useSyncExternalStore(subscribe, () => current, () => "loading" as BridgeState);
+}
+
+/** Latest numbers from the bridge (templates loaded, last scan, last sync), refreshed with the same shared poller. */
+export function useBridgeInfo(): BridgeInfo {
+  return useSyncExternalStore(subscribeInfo, () => info, () => null);
 }

@@ -13,20 +13,23 @@ const OPTIONS = [
 const subscribe = () => () => {};
 const useMounted = () => useSyncExternalStore(subscribe, () => true, () => false);
 
-/** Three-way switch: Light / Dark / System. `compact` shows icons only (for tight spaces like the kiosk bar). */
-export function ThemeToggle({ compact = false, className = "" }: { compact?: boolean; className?: string }) {
+/**
+ * Three-way switch: Light / Dark / System.
+ * `compact` shows icons only; `block` stretches it to the full width of its container (sidebar).
+ */
+export function ThemeToggle({ compact = false, block = false, className = "" }: { compact?: boolean; block?: boolean; className?: string }) {
   const { theme, setTheme } = useTheme();
   const mounted = useMounted();
   return (
-    <div role="radiogroup" aria-label="Theme" className={`inline-flex rounded-lg border bg-muted p-0.5 ${className}`}>
+    <div role="radiogroup" aria-label="Theme" className={`${block ? "flex" : "inline-flex"} rounded-xl border bg-accent p-1 ${className}`}>
       {OPTIONS.map(({ value, label, Icon }) => {
         const active = mounted && theme === value;
         return (
           <button key={value} type="button" role="radio" aria-checked={active} aria-label={label} title={label}
             onClick={() => setTheme(value)}
-            className={`flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition-colors
-              ${active ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
-            <Icon className="size-3.5" />{!compact && label}
+            className={`flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${block ? "flex-1" : ""}
+              ${active ? "bg-card text-foreground shadow-card" : "text-muted-foreground hover:text-foreground"}`}>
+            <Icon className="size-4" />{!compact && !block && label}
           </button>
         );
       })}

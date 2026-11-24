@@ -6,105 +6,111 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * CHAQ GYM design tokens, one set per theme.
- * Light and dark share the same rules: hairline borders, tight corners, and purple (--brand) ONLY for
- * "primary action", "active" or "streak". The fire gradient exists only on the 6+ day streak tile.
- * :root = LIGHT, .dark = DARK. Status colours (ok/warn/bad) are darker in light mode to keep text readable.
+ * CHAQ GYM design tokens: "Athletic Modernist Operational".
+ * Light is the main look (cool slate canvas, white cards, hairline borders, electric indigo); dark is a navy night version.
+ * Indigo (--brand) means "primary action / active / streak". Emerald = ready & healthy, orange = expiring soon, red = expired.
+ * Headlines and big numbers use Barlow Condensed (athletic scoreboard feel); everything else uses Plus Jakarta Sans.
  */
 :root {
-  --background: #f3f3f7;
-  --foreground: #0a0a0f;
+  --background: #f8fafc;
+  --foreground: #0f172a;
   --card: #ffffff;
-  --card-foreground: #0a0a0f;
+  --card-foreground: #0f172a;
   --popover: #ffffff;
-  --popover-foreground: #0a0a0f;
-  --primary: #7c3aed;
+  --popover-foreground: #0f172a;
+  --primary: #4648d4;
   --primary-foreground: #ffffff;
-  --secondary: #ececf2;
-  --secondary-foreground: #0a0a0f;
-  --muted: #ececf2;
-  --muted-foreground: #454553;
-  --accent: #e9e9f0;
-  --accent-foreground: #0a0a0f;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #475569;
+  --accent: #eef2ff;
+  --accent-foreground: #0f172a;
   --destructive: #dc2626;
-  --border: #d2d2dd;
-  --input: #c3c3d0;
-  --ring: #7c3aed;
+  --border: #e2e8f0;
+  --input: #cbd5e1;
+  --ring: #6366f1;
 
-  --brand: #6d28d9;
-  --brand-strong: #7c3aed;
+  --brand: #4648d4;          /* indigo used for text, icons and outlines */
+  --brand-strong: #4648d4;   /* indigo used for solid fills */
   --ok: #047857;
-  --warn: #b45309;
+  --warn: #c2410c;
   --bad: #b91c1c;
 
-  --chart-1: #7c3aed;
-  --chart-2: #a78bfa;
-  --chart-3: #5b21b6;
-  --chart-4: #059669;
-  --chart-5: #d97706;
+  --chart-1: #4648d4;
+  --chart-2: #a5b4fc;
+  --chart-3: #c7d2fe;
+  --chart-4: #10b981;
+  --chart-5: #f97316;
 
   --radius: 0.5rem;
-  --sidebar: #ffffff;
-  --sidebar-foreground: #0a0a0f;
-  --sidebar-primary: #7c3aed;
+  --sidebar: #eff4ff;
+  --sidebar-foreground: #0f172a;
+  --sidebar-primary: #4648d4;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #ececf2;
-  --sidebar-accent-foreground: #0a0a0f;
-  --sidebar-border: #d2d2dd;
-  --sidebar-ring: #7c3aed;
+  --sidebar-accent: #e0e7ff;
+  --sidebar-accent-foreground: #0f172a;
+  --sidebar-border: #dbe4fb;
+  --sidebar-ring: #6366f1;
 
-  /* streak tile "no workout" colours (the purple levels are the same in both themes) */
-  --tile-empty-bg: #e9e9f0;
-  --tile-empty-fg: #70707f;
-  --tile-empty-border: #d4d4de;
+  /* elevation: crisp borders + a very soft ambient shadow (level 1 = cards, level 2 = menus and pop-ups) */
+  --elev-1: 0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 1px 2px -1px rgba(15, 23, 42, 0.03);
+  --elev-2: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.03);
+
+  /* streak tile "no workout" colours (the indigo levels are the same in both themes) */
+  --tile-empty-bg: #e2e8f0;
+  --tile-empty-fg: #64748b;
+  --tile-empty-border: #cbd5e1;
 }
 
 .dark {
-  --background: #09090b;
+  --background: #0b1120;
   --foreground: #ffffff;
-  --card: #121217;
+  --card: #111a2e;
   --card-foreground: #ffffff;
-  --popover: #17171d;
+  --popover: #162038;
   --popover-foreground: #ffffff;
-  --primary: #7c3aed;
+  --primary: #6366f1;
   --primary-foreground: #ffffff;
-  --secondary: #1f1f26;
+  --secondary: #1b2745;
   --secondary-foreground: #ffffff;
-  --muted: #1a1a20;
-  --muted-foreground: #b6b6c4;
-  --accent: #23232b;
+  --muted: #162038;
+  --muted-foreground: #b4c0d8;
+  --accent: #1b2745;
   --accent-foreground: #ffffff;
-  --destructive: #f05252;
-  --border: #2d2d37;
-  --input: #363641;
-  --ring: #8b5cf6;
+  --destructive: #f87171;
+  --border: #223052;
+  --input: #2b3a5e;
+  --ring: #818cf8;
 
-  --brand: #8b5cf6;
-  --brand-strong: #7c3aed;
+  --brand: #a5b4fc;
+  --brand-strong: #6366f1;
   --ok: #34d399;
-  --warn: #fbbf24;
+  --warn: #fb923c;
   --bad: #f87171;
 
-  --chart-1: #8b5cf6;
-  --chart-2: #c4b5fd;
-  --chart-3: #5b21b6;
+  --chart-1: #6366f1;
+  --chart-2: #a5b4fc;
+  --chart-3: #4338ca;
   --chart-4: #34d399;
-  --chart-5: #fbbf24;
+  --chart-5: #fb923c;
 
-  --sidebar: #0d0d11;
+  --sidebar: #0e1628;
   --sidebar-foreground: #ffffff;
-  --sidebar-primary: #7c3aed;
+  --sidebar-primary: #6366f1;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #23232b;
+  --sidebar-accent: #1b2745;
   --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #2d2d37;
-  --sidebar-ring: #8b5cf6;
+  --sidebar-border: #223052;
+  --sidebar-ring: #818cf8;
 
-  --tile-empty-bg: #16161c;
-  --tile-empty-fg: #8c8c9b;
-  --tile-empty-border: #2d2d37;
+  --elev-1: 0 1px 3px 0 rgba(0, 0, 0, 0.35), 0 1px 2px -1px rgba(0, 0, 0, 0.3);
+  --elev-2: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.35);
+
+  --tile-empty-bg: #172036;
+  --tile-empty-fg: #8493b3;
+  --tile-empty-border: #223052;
 }
-
 
 /* Type scale (replaces Tailwind's smaller defaults): readable on a phone and on the front-desk PC. */
 @theme {
@@ -153,10 +159,12 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-jakarta);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-display);
   --font-display: var(--font-display);
+  --shadow-card: var(--elev-1);
+  --shadow-pop: var(--elev-2);
   --radius-sm: calc(var(--radius) - 2px);
   --radius-md: var(--radius);
   --radius-lg: calc(var(--radius) + 2px);
@@ -170,33 +178,33 @@
   * { @apply border-border; }
   body {
     @apply bg-background text-foreground antialiased text-sm;
-    font-family: var(--font-geist-sans), system-ui, sans-serif;
+    font-family: var(--font-jakarta), system-ui, sans-serif;
   }
   /* native date pickers / selects follow the theme */
   :root { color-scheme: light; }
   .dark { color-scheme: dark; }
 }
 
-/* Scoreboard typography: condensed display face + tabular figures for every number that matters. */
-.font-display { font-family: var(--font-display), "Arial Narrow", sans-serif; letter-spacing: 0.01em; }
-.numeral { font-family: var(--font-display), "Arial Narrow", sans-serif; font-variant-numeric: tabular-nums; font-weight: 700; line-height: 1; }
-.eyebrow { font-family: var(--font-display), sans-serif; text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.875rem; font-weight: 600; color: var(--muted-foreground); }
+/* Scoreboard typography: Barlow Condensed (800) + tabular figures for every number that matters. */
+.font-display { font-family: var(--font-display), "Arial Narrow", sans-serif; letter-spacing: 0.02em; }
+.numeral { font-family: var(--font-display), "Arial Narrow", sans-serif; font-variant-numeric: tabular-nums; font-weight: 800; line-height: 1; }
+.eyebrow { font-family: var(--font-display), sans-serif; text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.875rem; font-weight: 700; color: var(--muted-foreground); }
 
-/* ---- Streak tiles: gray -> light purple -> purple -> deep purple + flame -> glowing purple-fire ---- */
+/* ---- Streak tiles: slate -> light indigo -> indigo -> deep indigo + flame -> glowing indigo-violet-fire ---- */
 .tile-l0 { background: var(--tile-empty-bg); color: var(--tile-empty-fg); border: 1px solid var(--tile-empty-border); }
-.tile-l1 { background: #c4b5fd; color: #2e1065; border: 1px solid #ddd6fe; }
-.tile-l2 { background: #8b5cf6; color: #fff; border: 1px solid #a78bfa; }
-.tile-l3 { background: #5b21b6; color: #fff; border: 1px solid #7c3aed; }
+.tile-l1 { background: #c7d2fe; color: #1e1b4b; border: 1px solid #e0e7ff; }
+.tile-l2 { background: #6366f1; color: #fff; border: 1px solid #818cf8; }
+.tile-l3 { background: #4338ca; color: #fff; border: 1px solid #6366f1; }
 .tile-l4 {
-  background: linear-gradient(160deg, #7c3aed 0%, #c026d3 55%, #fb923c 100%);
-  color: #fff; border: 1px solid #f0abfc;
+  background: linear-gradient(160deg, #4f46e5 0%, #a855f7 55%, #fb923c 100%);
+  color: #fff; border: 1px solid #c4b5fd;
   animation: fire-glow 1.8s ease-in-out infinite;
 }
 .tile-today { outline: 2px solid var(--foreground); outline-offset: 2px; }
 .text-white .tile-today { outline-color: #fff; } /* on the coloured kiosk result screens */
 @keyframes fire-glow {
-  0%, 100% { box-shadow: 0 0 10px 0 rgba(192, 38, 211, .5), 0 0 22px 2px rgba(251, 146, 60, .22); }
-  50% { box-shadow: 0 0 18px 3px rgba(192, 38, 211, .8), 0 0 34px 8px rgba(251, 146, 60, .4); }
+  0%, 100% { box-shadow: 0 0 10px 0 rgba(168, 85, 247, .5), 0 0 22px 2px rgba(251, 146, 60, .22); }
+  50% { box-shadow: 0 0 18px 3px rgba(168, 85, 247, .8), 0 0 34px 8px rgba(251, 146, 60, .4); }
 }
 .flame { display: inline-block; transform-origin: 50% 90%; animation: flicker .9s ease-in-out infinite alternate; }
 @keyframes flicker { 0% { transform: scale(1) rotate(-3deg); } 100% { transform: scale(1.14) rotate(3deg); } }
