@@ -5,6 +5,9 @@ export const BRIDGE_URL = process.env.NEXT_PUBLIC_BRIDGE_URL || "http://localhos
 export interface BridgeStatus {
   scannerConnected: boolean;
   scannerError: string | null;
+  scannerPluggedIn?: boolean | null; // Windows sees the scanner (it may still be reconnecting)
+  scannerReady?: boolean;            // connected AND fingerprints loaded: only then can check-in work
+  lastSyncOk?: boolean;              // last fingerprint download from the website worked
   templatesLoaded: number;
 }
 
@@ -12,12 +15,13 @@ export type BridgeResult<T> = ({ ok: true } & T) | { ok: false; code: string; me
 
 /** Friendly texts for every error code the bridge (or a dead bridge) can produce. */
 export const BRIDGE_MESSAGES: Record<string, string> = {
-  bridge_offline: "The fingerprint bridge is not running on this PC. Start ChaqBridge.exe and try again.",
-  scanner_disconnected: "The scanner is not connected. Check the USB cable.",
+  bridge_offline: "The fingerprint program is not running on this PC. It normally restarts by itself within a few seconds; if not, open ChaqBridge from the Start menu.",
+  scanner_disconnected: "The scanner is unplugged. Plug its USB cable back in; it reconnects by itself within a few seconds.",
   timeout: "No finger detected. Please try again.",
   poor_scan: "The scan was too faint. Press firmly and keep your finger still.",
   already_registered: "This finger is already registered to another member.",
   cancelled: "Scan cancelled.",
+  starting: "The scanner is still loading the fingerprints. Please try again in a moment.",
 };
 
 async function call<T>(path: string, init?: RequestInit): Promise<BridgeResult<T>> {

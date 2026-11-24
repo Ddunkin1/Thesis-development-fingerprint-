@@ -1,4 +1,5 @@
 import { Brand } from "./Brand";
+import { ThemeToggle } from "./ThemeToggle";
 import { WeekTiles } from "./WeekTiles";
 import type { Tile } from "@/lib/streak-rules";
 
@@ -23,7 +24,8 @@ export function AuthFrame({ title, subtitle, children }: { title: string; subtit
         <p className="text-xs text-muted-foreground">Fingerprint attendance for Chaq Gym</p>
       </section>
 
-      <section className="flex items-center justify-center p-6">
+      <section className="relative flex items-center justify-center p-6">
+        <ThemeToggle compact className="absolute right-4 top-4" />
         <div className="w-full max-w-sm">
           <div className="mb-8 lg:hidden"><Brand size="lg" /></div>
           <h1 className="font-display text-4xl font-bold uppercase leading-none">{title}</h1>

@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Brand } from "./Brand";
 import { LogoutButton } from "./LogoutButton";
+import { ScannerStatus } from "./ScannerStatus";
+import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
@@ -47,6 +49,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col gap-6 border-r bg-sidebar p-4 md:flex">
         <Brand size="sm" />
         <NavList />
+        <ScannerStatus />
+        <ThemeToggle className="self-start" />
         <LogoutButton className="justify-start text-muted-foreground" />
       </aside>
 
@@ -59,6 +63,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               <SheetTitle className="sr-only">Menu</SheetTitle>
               <Brand size="sm" />
               <NavList />
+              <ScannerStatus />
+              <ThemeToggle className="self-start" />
               <LogoutButton className="justify-start text-muted-foreground" />
             </SheetContent>
           </Sheet>

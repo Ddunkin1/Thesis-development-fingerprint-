@@ -2,16 +2,64 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-/* The app is dark-only: the `dark` class is set on <html> so shadcn's dark: variants apply. */
+/* `dark:` variants follow the .dark class that next-themes puts on <html>. */
 @custom-variant dark (&:is(.dark *));
 
 /*
- * CHAQ GYM design tokens.
- * Near-black surfaces, thin hairline borders, tight corners. Purple (--brand) is used ONLY to mean
- * "primary action", "active" or "streak" - never as decoration. The fire gradient exists only on the
- * 6+ day streak tile.
+ * CHAQ GYM design tokens, one set per theme.
+ * Light and dark share the same rules: hairline borders, tight corners, and purple (--brand) ONLY for
+ * "primary action", "active" or "streak". The fire gradient exists only on the 6+ day streak tile.
+ * :root = LIGHT, .dark = DARK. Status colours (ok/warn/bad) are darker in light mode to keep text readable.
  */
 :root {
+  --background: #f6f6f9;
+  --foreground: #131318;
+  --card: #ffffff;
+  --card-foreground: #131318;
+  --popover: #ffffff;
+  --popover-foreground: #131318;
+  --primary: #7c3aed;
+  --primary-foreground: #ffffff;
+  --secondary: #ececf2;
+  --secondary-foreground: #131318;
+  --muted: #eeeef3;
+  --muted-foreground: #62626f;
+  --accent: #e9e9f0;
+  --accent-foreground: #131318;
+  --destructive: #dc2626;
+  --border: #dedee6;
+  --input: #d2d2dc;
+  --ring: #7c3aed;
+
+  --brand: #6d28d9;
+  --brand-strong: #7c3aed;
+  --ok: #047857;
+  --warn: #b45309;
+  --bad: #b91c1c;
+
+  --chart-1: #7c3aed;
+  --chart-2: #a78bfa;
+  --chart-3: #5b21b6;
+  --chart-4: #059669;
+  --chart-5: #d97706;
+
+  --radius: 0.5rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #131318;
+  --sidebar-primary: #7c3aed;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eeeef3;
+  --sidebar-accent-foreground: #131318;
+  --sidebar-border: #dedee6;
+  --sidebar-ring: #7c3aed;
+
+  /* streak tile "no workout" colours (the purple levels are the same in both themes) */
+  --tile-empty-bg: #ebebf1;
+  --tile-empty-fg: #8a8a99;
+  --tile-empty-border: #dcdce5;
+}
+
+.dark {
   --background: #09090b;
   --foreground: #f4f4f6;
   --card: #101013;
@@ -43,7 +91,6 @@
   --chart-4: #34d399;
   --chart-5: #fbbf24;
 
-  --radius: 0.5rem;
   --sidebar: #0c0c0f;
   --sidebar-foreground: #f4f4f6;
   --sidebar-primary: #7c3aed;
@@ -52,6 +99,10 @@
   --sidebar-accent-foreground: #f4f4f6;
   --sidebar-border: #25252c;
   --sidebar-ring: #8b5cf6;
+
+  --tile-empty-bg: #14141a;
+  --tile-empty-fg: #6a6a78;
+  --tile-empty-border: #25252c;
 }
 
 @theme inline {
@@ -110,7 +161,9 @@
     @apply bg-background text-foreground antialiased;
     font-family: var(--font-geist-sans), system-ui, sans-serif;
   }
-  input, select { color-scheme: dark; }
+  /* native date pickers / selects follow the theme */
+  :root { color-scheme: light; }
+  .dark { color-scheme: dark; }
 }
 
 /* Scoreboard typography: condensed display face + tabular figures for every number that matters. */
@@ -119,7 +172,7 @@
 .eyebrow { font-family: var(--font-display), sans-serif; text-transform: uppercase; letter-spacing: 0.14em; font-size: 0.75rem; font-weight: 600; color: var(--muted-foreground); }
 
 /* ---- Streak tiles: gray -> light purple -> purple -> deep purple + flame -> glowing purple-fire ---- */
-.tile-l0 { background: #14141a; color: #6a6a78; border: 1px solid #25252c; }
+.tile-l0 { background: var(--tile-empty-bg); color: var(--tile-empty-fg); border: 1px solid var(--tile-empty-border); }
 .tile-l1 { background: #c4b5fd; color: #2e1065; border: 1px solid #ddd6fe; }
 .tile-l2 { background: #8b5cf6; color: #fff; border: 1px solid #a78bfa; }
 .tile-l3 { background: #5b21b6; color: #fff; border: 1px solid #7c3aed; }
@@ -129,6 +182,7 @@
   animation: fire-glow 1.8s ease-in-out infinite;
 }
 .tile-today { outline: 2px solid var(--foreground); outline-offset: 2px; }
+.text-white .tile-today { outline-color: #fff; } /* on the coloured kiosk result screens */
 @keyframes fire-glow {
   0%, 100% { box-shadow: 0 0 10px 0 rgba(192, 38, 211, .5), 0 0 22px 2px rgba(251, 146, 60, .22); }
   50% { box-shadow: 0 0 18px 3px rgba(192, 38, 211, .8), 0 0 34px 8px rgba(251, 146, 60, .4); }

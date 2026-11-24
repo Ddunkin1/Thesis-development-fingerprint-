@@ -1,13 +1,15 @@
 "use client";
-import { ArrowLeft, Ban, Check, Flame, Fingerprint, Maximize, ShieldAlert, XCircle } from "lucide-react";
+import { ArrowLeft, Ban, Check, Flame, Fingerprint, Maximize, Loader2, PlugZap, ShieldAlert, Unplug, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { bridge } from "@/lib/bridge-client";
+import { PROBLEM_TEXT, useBridgeStatus } from "@/lib/use-bridge-status";
 import { MILESTONES, type BadgeDef } from "@/lib/badges";
 import type { StreakView } from "@/services/streak-service";
 import { BadgeIcon } from "./BadgeIcon";
 import { BridgeBanner } from "./BridgeBanner";
 import { Brand } from "./Brand";
+import { ThemeToggle } from "./ThemeToggle";
 import { WeekTiles } from "./WeekTiles";
 
 type Outcome =
@@ -28,6 +30,8 @@ export function Kiosk() {
   const [result, setResult] = useState<Outcome | null>(null);
   const [now, setNow] = useState<Date | null>(null); // set after mount (a prerendered clock would be stale)
   const alive = useRef(true);
+  const bridgeState = useBridgeStatus();
+  const offline = !result && (bridgeState === "scanner_off" || bridgeState === "bridge_off" || bridgeState === "reconnecting" || bridgeState === "sync_error");
 
   useEffect(() => {
     const first = setTimeout(() => setNow(new Date()), 0);
@@ -57,7 +61,7 @@ export function Kiosk() {
     return () => { alive.current = false; bridge.cancel(); };
   }, []);
 
-  const bg = !result ? "bg-background"
+  const bg = !result ? (offline ? (bridgeState === "reconnecting" ? "bg-[#3b2a06]" : "bg-[#3b0a0a]") : "bg-background")
     : result.status === "checked_in" ? "bg-[#4c1d95]"
     : result.status === "checked_out" ? "bg-[#17171b]"
     : result.status === "already" ? "bg-[#4a3203]"
@@ -69,16 +73,29 @@ export function Kiosk() {
   const date = now ? new Intl.DateTimeFormat("en-PH", { timeZone: "Asia/Manila", weekday: "long", month: "long", day: "numeric" }).format(now) : "";
 
   return (
-    <main className={`relative flex min-h-screen flex-col ${bg} p-6 transition-colors duration-300 md:p-10`}>
-      <div className="flex items-center justify-between text-white/60">
-        <Link href="/admin" className="flex items-center gap-2 text-sm hover:text-white"><ArrowLeft className="size-4" /> Admin</Link>
-        <button aria-label="Toggle fullscreen" onClick={() => (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen())}
-          className="rounded-md p-2 hover:bg-white/10 hover:text-white"><Maximize className="size-5" /></button>
+    <main className={`relative flex min-h-screen flex-col ${bg} ${result || offline ? "text-white" : ""} p-6 transition-colors duration-300 md:p-10`}>
+      <div className={`flex items-center justify-between ${result || offline ? "text-white/60 [&_a:hover]:text-white [&_button:hover]:text-white" : "text-muted-foreground [&_a:hover]:text-foreground [&_button:hover]:text-foreground"}`}>
+        <Link href="/admin" className="flex items-center gap-2 text-sm"><ArrowLeft className="size-4" /> Admin</Link>
+        <div className="flex items-center gap-2">
+          {!result && !offline && <ThemeToggle compact />}
+          <button aria-label="Toggle fullscreen" onClick={() => (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen())}
+            className="rounded-md p-2 hover:bg-foreground/10"><Maximize className="size-5" /></button>
+        </div>
       </div>
-      <div className="mx-auto mt-2 w-full max-w-3xl"><BridgeBanner /></div>
+      {!offline && <div className="mx-auto mt-2 w-full max-w-3xl"><BridgeBanner /></div>}
 
       <div className="flex flex-1 flex-col justify-center">
-        {!result && (
+        {offline && (
+          <div className="slide-up text-center" role="alert">
+            {bridgeState === "reconnecting" ? <Loader2 className="mx-auto size-[16vw] animate-spin md:size-[9vw]" />
+              : bridgeState === "scanner_off" ? <Unplug className="mx-auto size-[16vw] md:size-[9vw]" /> : <PlugZap className="mx-auto size-[16vw] md:size-[9vw]" />}
+            <div className="font-display mt-4 text-[12vw] font-extrabold uppercase leading-[0.9] md:text-[7vw]">{PROBLEM_TEXT[bridgeState as "scanner_off" | "reconnecting" | "sync_error" | "bridge_off"].title}</div>
+            <p className="mx-auto mt-6 max-w-4xl text-[5vw] leading-snug text-white/85 md:text-[2.2vw]">{PROBLEM_TEXT[bridgeState as "scanner_off" | "reconnecting" | "sync_error" | "bridge_off"].help}</p>
+            <p className="mt-8 animate-pulse text-[4vw] text-white/70 md:text-[1.6vw]">{bridgeState === "reconnecting" ? "Almost ready. This screen returns by itself." : "Waiting for the scanner. This screen returns by itself when it is ready."}</p>
+          </div>
+        )}
+
+        {!result && !offline && (
           <div className="slide-up text-center">
             <div className="eyebrow !text-base !text-muted-foreground">{date}</div>
             <div className="numeral text-[22vw] leading-none md:text-[17vw]">{time || " "}</div>

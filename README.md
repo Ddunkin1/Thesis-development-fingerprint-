@@ -77,6 +77,10 @@ dotnet run -c Release
 ```
 
 * A small status window opens (scanner connected, templates loaded, last scan, log). The API listens on `http://localhost:5055`.
+* **Closing the window does not stop the bridge**: it hides to the tray icon (near the clock). Right-click the icon → *Exit bridge* to stop it on purpose.
+* **Watchdog:** `ChaqBridge.exe` starts an invisible supervisor that runs the real bridge and restarts it within a few seconds if it ever crashes
+  (the ZKTeco driver is native code, so a driver crash would otherwise take the whole program down). Crashes are written to `bridge.log` next to the exe.
+* **Start with Windows:** on the gym PC run `powershell -ExecutionPolicy Bypass -File .\install-startup.ps1` once, from the folder that holds `ChaqBridge.exe`.
 * Settings (`appsettings.json`, overridden by `appsettings.local.json` and env vars): `WebAppUrl`, `AllowedOrigins`, `SyncMinutes`, `Port`, `ApiKey`.
   Env var forms: `Bridge__WebAppUrl`, `ALLOWED_ORIGINS` (comma separated), `BRIDGE_API_KEY`.
 * To make a standalone copy for the gym PC: `dotnet publish -c Release -o publish`, copy `publish/` to the PC and put a shortcut to
@@ -93,6 +97,7 @@ CORS only allows the origins in `AllowedOrigins`; other origins get 403.
    Username = lastname + `2026` (`cruz2026`, then `cruz2026a`…), default password = lastname + `Chaq`; the member must change it at first login.
 2. **Kiosk** (`/kiosk`) → fullscreen check-in screen; leave it open on the front-desk PC next to the bridge.
 3. **Members / Attendance / Reports / Leaderboard / Dashboard** in the admin menu.
+4. **Theme:** Light / Dark / System switch at the bottom of the admin sidebar (also on the login page and the kiosk). It defaults to dark and the choice is remembered per browser.
 
 ## Code map (for the thesis defense)
 
@@ -124,6 +129,20 @@ origin check on state-changing requests, bridge key compared in constant time, R
    "local network access"; choose **Allow**. (Safari blocks https→http localhost.)
 7. Consider a separate Neon branch for development and `production` for Railway.
 
+## If the scanner is unplugged (by accident or on purpose)
+
+| Where | What you see |
+|---|---|
+| Kiosk | a big red **"Scanner not connected"** screen telling the person at the desk to plug the USB cable back in |
+| Every admin page | a red dot **"Scanner unplugged"** in the sidebar (green **"Scanner ready"** when fine) and a banner on the pages that need the scanner |
+| Gym PC tray icon | a Windows notification: "Scanner unplugged!" / "Scanner connected" |
+| After plugging it back in | an amber **"Scanner reconnecting…"** step (kiosk, sidebar light and banner) for the few seconds it takes to start the scanner and load the fingerprints; it turns green only when check-in really works. A scan during that time is refused with "loading fingerprints" instead of a false "not recognized". |
+
+The bridge checks Windows every 2 seconds. **Plug the cable back in and check-in works again by itself in about 2-5 seconds**: it
+re-initialises the driver, reopens the scanner and re-downloads the fingerprints. Nobody has to restart anything, and the kiosk
+screen returns to "Place your finger" on its own. A **"Check-in is offline"** screen means the bridge program itself is not running; the
+watchdog normally brings it back within seconds, otherwise open ChaqBridge from the Start menu.
+
 ## Troubleshooting
 
 * **"Scanner NOT connected", Init failed (-2)** → install the ZKTeco driver, replug the Live20R, make sure no other program (the SDK demo) is using it.
@@ -138,6 +157,8 @@ origin check on state-changing requests, bridge key compared in constant time, R
 - [ ] Member's first login forces a password change (8+ chars with letters and numbers).
 - [ ] Opening `/admin`, `/kiosk` or an `/api/admin/*` URL while signed out (or as a member) is refused.
 - [ ] Bridge: status window shows scanner connected; `http://localhost:5055/status` says `scannerConnected: true`; unplugging the scanner flips it to NOT connected within a few seconds.
+- [ ] Unplug the scanner: kiosk shows "Scanner not connected", the admin sidebar turns red, a tray notification appears. Plug it back in: everything recovers by itself in seconds and a registered finger checks in again without restarting anything.
+- [ ] Kill the bridge (Task Manager → end the `ChaqBridge.exe` that was started with `--worker`): it is back within a few seconds and `bridge.log` records the restart.
 - [ ] Register a monthly member: scanning is disabled until name + consent; 1/3, 2/3, 3/3 progress; username/password preview matches `cruz2026` / `cruzChaq`; a second "Cruz" gets `cruz2026a`.
 - [ ] Enrolling the same finger for a different member is rejected ("already registered").
 - [ ] Register a walk-in; it appears under today's walk-ins and can be converted to a monthly member.
@@ -151,4 +172,5 @@ origin check on state-changing requests, bridge key compared in constant time, R
 - [ ] Badges: First Visit, 7-Day Fire, 30 Visits, Comeback (14+ days away) appear once each.
 - [ ] Dashboard numbers match the data (active/expiring/expired, check-ins, walk-ins, income today/month, peak hours).
 - [ ] Attendance history filters by date and name; CSV opens in Excel. Each report tab loads and exports CSV.
+- [ ] Theme: the Light / Dark / System switch changes every page (login, admin, kiosk, dialogs, toasts), survives a reload, and "System" follows the PC setting.
 - [ ] Railway readiness: variables set, `ADMIN_PASSWORD` changed, `/login` works over HTTPS, bridge `AllowedOrigins` updated.

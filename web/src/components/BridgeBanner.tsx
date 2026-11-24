@@ -1,31 +1,17 @@
 "use client";
-import { PlugZap, Fingerprint } from "lucide-react";
-import { useEffect, useState } from "react";
-import { bridge, BRIDGE_MESSAGES } from "@/lib/bridge-client";
+import { Fingerprint, Loader2, PlugZap } from "lucide-react";
+import { PROBLEM_TEXT, useBridgeStatus } from "@/lib/use-bridge-status";
 
-/** Polls the bridge; shows a clear banner when it is not running or the scanner is unplugged. */
+/** Shown above admin pages that need the scanner. Appears when something is wrong, disappears by itself when fixed. */
 export function BridgeBanner({ className = "" }: { className?: string }) {
-  const [problem, setProblem] = useState<{ text: string; scanner: boolean } | null>(null);
-
-  useEffect(() => {
-    let alive = true;
-    async function check() {
-      const s = await bridge.status();
-      if (!alive) return;
-      if (!s.ok) setProblem({ text: s.message, scanner: false });
-      else if (!s.scannerConnected) setProblem({ text: BRIDGE_MESSAGES.scanner_disconnected, scanner: true });
-      else setProblem(null);
-    }
-    check();
-    const t = setInterval(check, 4000);
-    return () => { alive = false; clearInterval(t); };
-  }, []);
-
-  if (!problem) return null;
-  const Icon = problem.scanner ? Fingerprint : PlugZap;
+  const state = useBridgeStatus();
+  if (state === "loading" || state === "ok") return null;
+  const Icon = state === "reconnecting" ? Loader2 : state === "scanner_off" ? Fingerprint : PlugZap;   // sync_error / bridge_off: plug icon
+  const { title, help } = PROBLEM_TEXT[state];
   return (
-    <div role="alert" className={`flex items-center gap-3 rounded-md border border-bad/40 bg-bad/10 px-4 py-3 text-sm text-bad ${className}`}>
-      <Icon className="size-4 shrink-0" /> {problem.text}
+    <div role="alert" className={`flex items-start gap-3 rounded-md border px-4 py-3 text-sm ${state === "reconnecting" ? "border-warn/40 bg-warn/10 text-warn" : "border-bad/40 bg-bad/10 text-bad"} ${className}`}>
+      <Icon className={`mt-0.5 size-4 shrink-0 ${state === "reconnecting" ? "animate-spin" : ""}`} />
+      <div><b className="font-semibold">{title}.</b> {help}</div>
     </div>
   );
 }
