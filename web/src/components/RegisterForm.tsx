@@ -1,5 +1,5 @@
 "use client";
-import { CalendarCheck, CheckCircle2, Copy, Fingerprint, IdCard, ShieldCheck, Ticket, UserRound } from "lucide-react";
+import { Copy } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -21,19 +21,19 @@ function copy(text: string) {
   navigator.clipboard?.writeText(text).then(() => toast.success("Copied"), () => toast.error("Could not copy"));
 }
 
-/** "Step 01" style heading used by the two form sections. */
+/** Numbered section heading used by the two form sections. */
 function StepTitle({ n, title, right }: { n: string; title: string; right?: React.ReactNode }) {
   return (
     <div className="mb-5 flex items-center justify-between gap-3 border-b pb-4">
-      <h2 className="flex items-center gap-3 font-display text-2xl font-extrabold uppercase leading-none tracking-wide">
-        <span className="flex size-9 items-center justify-center rounded-full bg-accent text-base text-brand">{n}</span>{title}
+      <h2 className="flex items-center gap-3 text-lg font-semibold leading-none">
+        <span className="flex size-7 items-center justify-center rounded-md bg-accent text-sm text-brand">{n}</span>{title}
       </h2>
       {right}
     </div>
   );
 }
 
-const card = "rounded-xl border bg-card p-6 shadow-card";
+const card = "rounded-lg border bg-card p-6";
 const pesos = (n: number) => n.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const addDaysTo = (iso: string, n: number) => { const [y, m, d] = iso.split("-").map(Number); return new Date(Date.UTC(y, m - 1, d + n)); };
 
@@ -108,14 +108,13 @@ export function RegisterForm() {
     setSaved(null); setFullName(""); setConsent(false); setAmount(""); setCash(""); setPrimary(null); setBackup(null); setPreview(null); setError(""); setWalkinId(null);
   }
 
-  const status = scanner === "ok" ? "Ready for enrollment" : scanner === "loading" ? "Checking scanner…" : "Scanner not ready";
   const header = (
-    <PageHeader eyebrow={`Terminal reception · ${status}`} title="Register member" description="Add a monthly member with a fingerprint, or log a single walk-in pass for today.">
-      <div role="radiogroup" aria-label="Registration type" className="flex rounded-full border bg-accent p-1">
-        {([["monthly", "Monthly member", ShieldCheck], ["walkin", "Walk-in pass", Ticket]] as const).map(([key, label, Icon]) => (
+    <PageHeader title="Register member" description="Add a monthly member with a fingerprint, or log a single walk-in pass for today.">
+      <div role="radiogroup" aria-label="Registration type" className="flex rounded-lg border bg-muted p-1">
+        {([["monthly", "Monthly member"], ["walkin", "Walk-in pass"]] as const).map(([key, label]) => (
           <button key={key} type="button" role="radio" aria-checked={mode === key} onClick={() => { setMode(key); setError(""); }}
-            className={`flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-colors ${mode === key ? "bg-primary text-primary-foreground shadow-card" : "text-foreground/70 hover:text-foreground"}`}>
-            <Icon className="size-4" />{label}
+            className={`rounded-md px-5 py-2 text-sm font-semibold transition-colors ${mode === key ? "bg-primary text-primary-foreground" : "text-foreground/70 hover:text-foreground"}`}>
+            {label}
           </button>
         ))}
       </div>
@@ -126,15 +125,14 @@ export function RegisterForm() {
     return (
       <div>
         {header}
-        <div className="max-w-xl rounded-xl border border-ok/40 bg-card p-6 shadow-card">
+        <div className="max-w-xl rounded-lg border bg-card p-6">
           <div className="flex items-center gap-3 text-ok">
-            <CheckCircle2 className="size-7" />
-            <h2 className="font-display text-3xl font-extrabold uppercase">{saved.kind === "monthly" ? "Member registered" : "Walk-in logged"}</h2>
+            <h2 className="text-2xl font-semibold">{saved.kind === "monthly" ? "Member registered" : "Walk-in logged"}</h2>
           </div>
           <p className="mt-1 text-muted-foreground">{saved.fullName}</p>
           {saved.kind === "monthly" ? (
             <>
-              <dl className="mt-5 divide-y rounded-xl border bg-accent/40 font-mono text-sm">
+              <dl className="mt-5 divide-y rounded-lg border bg-muted font-mono text-sm">
                 {[["Username", saved.username!], ["Default password", saved.password!], ["Valid until", saved.expiryDate!]].map(([k, v]) => (
                   <div key={k} className="flex items-center justify-between gap-3 px-4 py-3">
                     <dt className="text-muted-foreground">{k}</dt>
@@ -147,7 +145,7 @@ export function RegisterForm() {
               <p className="mt-3 text-xs text-muted-foreground">The member must change this password on first login. Give them these details now.</p>
             </>
           ) : <p className="mt-3 text-sm text-muted-foreground">Valid for one session today. No account was created.</p>}
-          <Button className="mt-5 rounded-full" onClick={reset}>Register another</Button>
+          <Button className="mt-5" onClick={reset}>Register another</Button>
         </div>
       </div>
     );
@@ -156,11 +154,10 @@ export function RegisterForm() {
   const saveBar = (
     <div>
       {error && <p role="alert" className="mb-3 text-sm font-medium text-bad">{error}</p>}
-      <Button onClick={save} disabled={!canSave} className="h-14 w-full rounded-xl font-display text-xl font-extrabold uppercase tracking-wide">
-        {saving ? "Saving…" : mode === "monthly" ? <><UserRound className="size-5" /> Save member &amp; activate fingerprint</> : <><Ticket className="size-5" /> Save walk-in pass</>}
+      <Button onClick={save} disabled={!canSave} className="h-12 w-full text-base font-semibold">
+        {saving ? "Saving…" : mode === "monthly" ? "Save member and activate fingerprint" : "Save walk-in pass"}
       </Button>
-      <p className="mt-3 flex items-center justify-center gap-2 text-center text-[0.8125rem] text-muted-foreground">
-        <span className={`size-2 shrink-0 rounded-full ${canSave ? "bg-ok" : "bg-warn"}`} />
+      <p className="mt-3 text-center text-[0.8125rem] text-muted-foreground">
         {canSave ? "Ready to register. The scanner will be used right away." : mode === "monthly" ? missing : "Enter the visitor name and the amount paid."}
       </p>
     </div>
@@ -175,28 +172,26 @@ export function RegisterForm() {
         <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
           <div className="space-y-6">
             <section className={card}>
-              <StepTitle n="01" title="Member profile" right={<span className="rounded-full bg-accent px-3 py-1 text-[0.8125rem] font-semibold text-muted-foreground">Step 1 of 2</span>} />
+              <StepTitle n="01" title="Member profile" right={<span className="rounded-md bg-muted px-2.5 py-1 text-[0.8125rem] font-semibold text-muted-foreground">Step 1 of 2</span>} />
               <div className="space-y-1.5">
                 <Label htmlFor="fullName" className="text-sm font-semibold">Full name <span className="text-bad">*</span></Label>
                 <div className="relative">
-                  <IdCard className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
-                  <Input id="fullName" className="h-12 bg-accent/40 pl-10" value={fullName} onChange={(e) => setFullName(e.target.value)} maxLength={100} placeholder="e.g. Juan Dela Cruz" autoComplete="off" />
+                  <Input id="fullName" className="h-11" value={fullName} onChange={(e) => setFullName(e.target.value)} maxLength={100} placeholder="e.g. Juan Dela Cruz" autoComplete="off" />
                 </div>
                 <p className="text-[0.8125rem] text-muted-foreground">The username and default password are created from the last word of the name.</p>
               </div>
 
               {preview && nameOk && (
-                <div className="mt-5 flex items-start gap-3 rounded-xl bg-accent p-4 text-sm">
-                  <UserRound className="mt-0.5 size-4 text-brand" />
+                <div className="mt-5 rounded-lg bg-accent p-4 text-sm">
                   <div className="font-mono">
-                    <div className="eyebrow mb-1">Account preview</div>
+                    <div className="eyebrow mb-1 font-sans">Account preview</div>
                     <div>Username <b className="text-brand">{preview.username}</b></div>
                     <div>Password <b className="text-brand">{preview.password}</b></div>
                   </div>
                 </div>
               )}
 
-              <div className="mt-5 flex items-start gap-3 rounded-xl border bg-accent/40 p-4">
+              <div className="mt-5 flex items-start gap-3 rounded-lg border bg-muted p-4">
                 <Checkbox id="consent" checked={consent} onCheckedChange={(v) => setConsent(v === true)} className="mt-0.5" />
                 <Label htmlFor="consent" className="block text-sm font-normal leading-relaxed">
                   <b className="font-semibold">Data privacy consent (RA 10173).</b> The member agrees that Chaq Gym may collect their name and a fingerprint
@@ -207,8 +202,7 @@ export function RegisterForm() {
 
             <section className={card}>
               <StepTitle n="02" title="Biometric fingerprint enrollment"
-                right={<span className={`flex items-center gap-2 rounded-full px-3 py-1 text-[0.8125rem] font-semibold ${scanner === "ok" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300" : "bg-orange-100 text-orange-800 dark:bg-orange-500/15 dark:text-orange-300"}`}>
-                  <span className={`size-2 rounded-full ${scanner === "ok" ? "bg-emerald-500" : "bg-orange-500"}`} />{scanner === "ok" ? "Sensor ready" : "Sensor not ready"}</span>} />
+                right={<span className={`rounded-md px-2.5 py-1 text-[0.8125rem] font-semibold ${scanner === "ok" ? "bg-ok-soft text-ok" : "bg-warn-soft text-warn"}`}>{scanner === "ok" ? "Sensor ready" : "Sensor not ready"}</span>} />
               <div className="space-y-4">
                 <FingerEnroll label="Step 1: Primary finger" required hint="Ask the member to press their preferred finger firmly on the scanner, three times, lifting in between."
                   disabled={!canEnroll} template={primary} onTemplate={setPrimary} />
@@ -221,33 +215,33 @@ export function RegisterForm() {
 
           <aside className="space-y-6 xl:sticky xl:top-24">
             <section className={card}>
-              <div className="eyebrow mb-4 !text-brand">Membership tier &amp; access</div>
-              <div className="flex items-end justify-between gap-4 rounded-xl bg-accent p-5">
+              <div className="mb-4 text-lg font-semibold">Membership</div>
+              <div className="flex items-end justify-between gap-4 rounded-lg bg-accent p-5">
                 <div>
-                  <div className="font-display text-2xl font-extrabold uppercase leading-none">Regular monthly pass</div>
+                  <div className="text-lg font-semibold leading-none">Monthly pass</div>
                   <div className="mt-2 text-sm text-muted-foreground">30 days of gym access</div>
                 </div>
                 <div className="numeral text-5xl text-brand"><span className="mr-1 align-top font-sans text-xl font-semibold">₱</span>{price ?? "…"}</div>
               </div>
-              <div className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-accent/60 px-4 py-3 text-sm">
-                <span className="flex items-center gap-2 font-semibold"><CalendarCheck className="size-4 text-brand" /> Validity period</span>
+              <div className="mt-3 flex items-center justify-between gap-3 rounded-lg bg-muted px-4 py-3 text-sm">
+                <span className="font-semibold">Validity</span>
                 <span className="font-bold text-brand">Valid until {validUntil || "…"}</span>
               </div>
 
-              <div className="eyebrow mb-3 mt-6">Included</div>
-              <ul className="space-y-3 text-sm">
+              <div className="mb-3 mt-6 text-sm font-semibold">Included</div>
+              <ul className="list-disc space-y-2 pl-5 text-sm marker:text-brand">
                 {["Fingerprint check-in at the front-desk kiosk", "Workout streaks, badges and the monthly leaderboard", "A personal member account to see their streak on a phone"].map((t) => (
-                  <li key={t} className="flex items-start gap-2.5"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-ok" />{t}</li>
+                  <li key={t}>{t}</li>
                 ))}
               </ul>
 
-              <div className="mt-6 grid grid-cols-2 gap-3 rounded-xl border bg-accent/40 p-4">
+              <div className="mt-6 grid grid-cols-2 gap-3 rounded-lg border bg-muted p-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="cash" className="eyebrow">Cash received (optional)</Label>
+                  <Label htmlFor="cash" className="text-sm font-semibold">Cash received (optional)</Label>
                   <Input id="cash" inputMode="decimal" className="h-11" value={cash} onChange={(e) => setCash(e.target.value)} placeholder="e.g. 1000" />
                 </div>
                 <div>
-                  <div className="eyebrow">{cashOk && price !== null && cashNum < price ? "Still short" : "Change to return"}</div>
+                  <div className="text-sm font-semibold">{cashOk && price !== null && cashNum < price ? "Still short" : "Change to return"}</div>
                   <div className={`numeral mt-2 text-4xl ${cashOk && price !== null && cashNum < price ? "text-bad" : "text-ok"}`}>
                     <span className="mr-1 align-top font-sans text-base font-semibold">₱</span>{cashOk && price !== null ? pesos(Math.abs(cashNum - price)) : "0.00"}
                   </div>
@@ -267,13 +261,12 @@ export function RegisterForm() {
                 <div className="space-y-1.5 sm:col-span-2">
                   <Label htmlFor="fullName" className="text-sm font-semibold">Full name <span className="text-bad">*</span></Label>
                   <div className="relative">
-                    <IdCard className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
-                    <Input id="fullName" className="h-12 bg-accent/40 pl-10" value={fullName} onChange={(e) => setFullName(e.target.value)} maxLength={100} placeholder="e.g. Maria Santos" autoComplete="off" />
+                    <Input id="fullName" className="h-11" value={fullName} onChange={(e) => setFullName(e.target.value)} maxLength={100} placeholder="e.g. Maria Santos" autoComplete="off" />
                   </div>
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="amount" className="text-sm font-semibold">Amount paid (₱) <span className="text-bad">*</span></Label>
-                  <Input id="amount" className="h-12 bg-accent/40" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" />
+                  <Input id="amount" className="h-11" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" />
                 </div>
               </div>
               {walkinId && <p className="mt-4 text-xs font-medium text-brand">Converting a walk-in: they will be linked to this new member.</p>}
@@ -281,14 +274,14 @@ export function RegisterForm() {
 
             {walkins.length > 0 && (
               <section className={card}>
-                <div className="eyebrow mb-3">Today&apos;s walk-ins</div>
+                <div className="mb-3 text-lg font-semibold">Today&apos;s walk-ins</div>
                 <ul className="divide-y text-sm">
                   {walkins.map((w) => (
                     <li key={w.id} className="flex items-center justify-between gap-3 py-3">
                       <span className="font-semibold">{w.fullName}</span>
                       {w.converted ? <span className="text-xs font-semibold text-ok">Converted</span> : (
-                        <Button size="sm" variant="outline" className="rounded-full" onClick={() => { setMode("monthly"); setFullName(w.fullName); setWalkinId(w.id); }}>
-                          <Fingerprint /> Convert to monthly member
+                        <Button size="sm" variant="outline" onClick={() => { setMode("monthly"); setFullName(w.fullName); setWalkinId(w.id); }}>
+                          Convert to monthly member
                         </Button>
                       )}
                     </li>
@@ -300,9 +293,9 @@ export function RegisterForm() {
 
           <aside className="xl:sticky xl:top-24">
             <section className={card}>
-              <div className="eyebrow mb-4 !text-brand">Walk-in day pass</div>
-              <div className="rounded-xl bg-accent p-5">
-                <div className="font-display text-2xl font-extrabold uppercase leading-none">Single session</div>
+              <div className="mb-4 text-lg font-semibold">Walk-in pass</div>
+              <div className="rounded-lg bg-accent p-5">
+                <div className="text-lg font-semibold leading-none">Single session</div>
                 <div className="mt-2 text-sm text-muted-foreground">Valid for one visit today. No account and no fingerprint needed.</div>
               </div>
               <div className="mt-6">{saveBar}</div>

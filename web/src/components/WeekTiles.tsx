@@ -3,7 +3,7 @@ import type { Tile } from "@/lib/streak-rules";
 
 /**
  * The 7 day tiles (Mon-Sun). Purely presentational, so the Phase 2 member page can reuse it as-is.
- * gray = no workout, light purple = day 1, purple = 2-3, deep purple + flame = 4-5, glowing fire = 6+.
+ * gray = no workout, light orange = day 1, orange = 2-3, deep orange + flame = 4-5, fire = 6+.
  */
 export function WeekTiles({ week, big = false }: { week: Tile[]; big?: boolean }) {
   return (

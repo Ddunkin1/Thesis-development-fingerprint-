@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 
-/** Wordmark: condensed caps, indigo on "GYM". */
+/** Wordmark: condensed caps, accent on "GYM". */
 export function Brand({ size = "lg" }: { size?: "sm" | "lg" | "xl" }) {
   const s = size === "xl" ? "text-6xl md:text-8xl" : size === "lg" ? "text-4xl" : "text-2xl";
   return (
@@ -25,10 +25,10 @@ export function BrandMark({ className = "size-11" }: { className?: string }) {
   }, []);
   if (hasLogo) {
     // eslint-disable-next-line @next/next/no-img-element -- optional file loaded only when present
-    return <img src="/logo.png" alt="Chaq Gym" className={`shrink-0 rounded-xl object-contain ${className}`} />;
+    return <img src="/logo.png" alt="Chaq Gym" className={`shrink-0 rounded-lg object-contain ${className}`} />;
   }
   return (
-    <span className={`flex shrink-0 items-center justify-center rounded-xl bg-primary font-display text-xl font-extrabold tracking-wider text-primary-foreground ${className}`} aria-hidden>
+    <span className={`flex shrink-0 items-center justify-center rounded-lg bg-primary font-display text-xl font-extrabold tracking-wider text-primary-foreground ${className}`} aria-hidden>
       CG
     </span>
   );

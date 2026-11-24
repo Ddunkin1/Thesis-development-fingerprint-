@@ -53,8 +53,8 @@ export default function MePage() {
             <ul className="grid grid-cols-2 gap-3">
               {p.badges.map((b) => (
                 <li key={b.key} className={`relative flex flex-col gap-2 rounded-2xl border p-4 ${b.earned ? "border-brand/50 bg-brand/5" : "opacity-60"}`}>
-                  {b.isNew && <span className="pop-in absolute right-3 top-3 rounded bg-brand px-1.5 py-0.5 text-[0.75rem] font-bold uppercase tracking-wider text-white">New</span>}
-                  <span className={`flex size-12 items-center justify-center rounded-full ${b.earned ? "bg-brand text-white" : "bg-muted text-muted-foreground"}`}>
+                  {b.isNew && <span className="pop-in absolute right-3 top-3 rounded bg-primary px-1.5 py-0.5 text-[0.75rem] font-bold uppercase tracking-wider text-primary-foreground">New</span>}
+                  <span className={`flex size-12 items-center justify-center rounded-full ${b.earned ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
                     {b.earned ? <BadgeIcon badgeKey={b.key} className="size-6" /> : <Lock className="size-5" />}
                   </span>
                   <div>

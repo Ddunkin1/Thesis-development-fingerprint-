@@ -8,7 +8,7 @@ interface B { key: string; label: string; description: string; isNew: boolean }
 // 18 confetti pieces with fixed positions, so the layout is the same on every render
 const CONFETTI = Array.from({ length: 18 }, (_, i) => ({
   left: `${(i * 37 + 8) % 100}%`, delay: `${(i % 6) * 0.15}s`, duration: `${2.4 + (i % 5) * 0.35}s`,
-  color: ["#6366f1", "#a855f7", "#fb923c", "#34d399", "#fbbf24", "#818cf8"][i % 6],
+  color: ["#ff7a1a", "#ffc72c", "#f25c54", "#ffb36b", "#2f7a3d", "#ffd9b3"][i % 6],
 }));
 
 /**

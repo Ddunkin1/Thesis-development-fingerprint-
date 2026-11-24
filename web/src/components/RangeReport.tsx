@@ -1,11 +1,12 @@
 "use client";
-import { Download, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { DataTable } from "./DataTable";
 import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
+import { TableSkeleton } from "./skeletons";
+import { peek, put } from "@/lib/client-cache";
 
 const manilaToday = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Manila" }).format(new Date());
 const addDays = (d: string, n: number) => { const [y, m, day] = d.split("-").map(Number); return new Date(Date.UTC(y, m - 1, day + n)).toISOString().slice(0, 10); };
@@ -44,10 +45,13 @@ export function RangeReport({
   useEffect(() => {
     if (showRange && (!from || !to)) return;
     const t = setTimeout(async () => {
+      const key = `admin:report:${endpoint}?${params()}`;
+      const cached = peek<{ headers: string[]; rows: (string | number)[][] }>(key);
+      if (cached) setTable(cached); // show the last result while the fresh one loads
       const res = await fetch(`${endpoint}?${params()}`);
       const data = await res.json().catch(() => ({}));
       if (!res.ok) { setError(data.error ?? "Could not load."); setTable(null); return; }
-      setError(""); setTable({ headers: data.headers, rows: data.rows });
+      setError(""); setTable(put(key, { headers: data.headers as string[], rows: data.rows as (string | number)[][] }));
     }, 250);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -77,10 +81,10 @@ export function RangeReport({
             <Input className="h-9 w-56 pl-9" placeholder="Search member..." value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search member" />
           </div>
         )}
-        <a href={`${endpoint}?${params(true)}`} className={buttonVariants({ variant: "outline", className: "ml-auto" })}><Download /> Export CSV</a>
+        <a href={`${endpoint}?${params(true)}`} className={buttonVariants({ variant: "outline", className: "ml-auto bg-card" })}>Export CSV</a>
       </div>
       {error && <p role="alert" className="mb-3 text-sm text-bad">{error}</p>}
-      {table ? <DataTable headers={table.headers} rows={table.rows} /> : !error && <Skeleton className="h-48 w-full" />}
+      {table ? <DataTable headers={table.headers} rows={table.rows} /> : !error && <TableSkeleton rows={4} />}
       {table && <p className="mt-2 text-xs text-muted-foreground">{table.rows.length} row(s)</p>}
     </div>
   );

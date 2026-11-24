@@ -6,110 +6,117 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * CHAQ GYM design tokens: "Athletic Modernist Operational".
- * Light is the main look (cool slate canvas, white cards, hairline borders, electric indigo); dark is a navy night version.
- * Indigo (--brand) means "primary action / active / streak". Emerald = ready & healthy, orange = expiring soon, red = expired.
- * Headlines and big numbers use Barlow Condensed (athletic scoreboard feel); everything else uses Plus Jakarta Sans.
+ * CHAQ GYM design tokens: "friendly neighborhood gym".
+ * Warm cream canvas, white cards, 1px warm-gray borders, ONE accent (tangerine). No gradients, no glow, no card shadows.
+ * --primary = solid accent fills (dark text on top); --brand = accent used as text/icons (darker for contrast on cream).
+ * Status colours are flat: ok = green, warn = amber, bad = red. Headlines and big numbers use Barlow Condensed; the rest Plus Jakarta Sans.
+ * Radii: 8px for cards/inputs/buttons (--radius), 6px for chips/badges (rounded-4xl is remapped below).
  */
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  --background: #fbf7f0;
+  --foreground: #1f1b16;
   --card: #ffffff;
-  --card-foreground: #0f172a;
+  --card-foreground: #1f1b16;
   --popover: #ffffff;
-  --popover-foreground: #0f172a;
-  --primary: #4648d4;
-  --primary-foreground: #ffffff;
-  --secondary: #f1f5f9;
-  --secondary-foreground: #0f172a;
-  --muted: #f1f5f9;
-  --muted-foreground: #475569;
-  --accent: #eef2ff;
-  --accent-foreground: #0f172a;
-  --destructive: #dc2626;
-  --border: #e2e8f0;
-  --input: #cbd5e1;
-  --ring: #6366f1;
+  --popover-foreground: #1f1b16;
+  --primary: #ff7a1a;
+  --primary-foreground: #1f1b16;
+  --secondary: #f3ede2;
+  --secondary-foreground: #1f1b16;
+  --muted: #f3ede2;
+  --muted-foreground: #6b6358;
+  --accent: #fff0e0;
+  --accent-foreground: #1f1b16;
+  --destructive: #c2362e;
+  --border: #e5ded2;
+  --input: #d6cdbe;
+  --ring: #ff7a1a;
 
-  --brand: #4648d4;          /* indigo used for text, icons and outlines */
-  --brand-strong: #4648d4;   /* indigo used for solid fills */
-  --ok: #047857;
-  --warn: #c2410c;
-  --bad: #b91c1c;
+  --brand: #b4470a;          /* accent for text, icons, key numbers */
+  --brand-strong: #ff7a1a;   /* accent for solid fills */
+  --ok: #2f7a3d;
+  --warn: #a15c07;
+  --bad: #b3261e;
+  --ok-soft: #e4f2e4;
+  --warn-soft: #fdf0d0;
+  --bad-soft: #fbe3e0;
 
-  --chart-1: #4648d4;
-  --chart-2: #a5b4fc;
-  --chart-3: #c7d2fe;
-  --chart-4: #10b981;
-  --chart-5: #f97316;
+  --chart-1: #ff7a1a;
+  --chart-2: #ffb36b;
+  --chart-3: #ffd9b3;
+  --chart-4: #2f7a3d;
+  --chart-5: #a15c07;
 
   --radius: 0.5rem;
-  --sidebar: #eff4ff;
-  --sidebar-foreground: #0f172a;
-  --sidebar-primary: #4648d4;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e0e7ff;
-  --sidebar-accent-foreground: #0f172a;
-  --sidebar-border: #dbe4fb;
-  --sidebar-ring: #6366f1;
+  --sidebar: #f3ede2;
+  --sidebar-foreground: #1f1b16;
+  --sidebar-primary: #ff7a1a;
+  --sidebar-primary-foreground: #1f1b16;
+  --sidebar-accent: #fde3c8;
+  --sidebar-accent-foreground: #1f1b16;
+  --sidebar-border: #e5ded2;
+  --sidebar-ring: #ff7a1a;
 
-  /* elevation: crisp borders + a very soft ambient shadow (level 1 = cards, level 2 = menus and pop-ups) */
-  --elev-1: 0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 1px 2px -1px rgba(15, 23, 42, 0.03);
-  --elev-2: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.03);
+  /* no card shadow; one very subtle shadow only for pop-ups (dialogs, menus) */
+  --elev-1: none;
+  --elev-2: 0 4px 16px -4px rgba(31, 27, 22, 0.12);
 
-  /* streak tile "no workout" colours (the indigo levels are the same in both themes) */
-  --tile-empty-bg: #e2e8f0;
-  --tile-empty-fg: #64748b;
-  --tile-empty-border: #cbd5e1;
+  /* streak tiles */
+  --tile-empty-bg: #efe8dc;
+  --tile-empty-fg: #8a8174;
+  --tile-empty-border: #e1d8c8;
 }
 
 .dark {
-  --background: #0b1120;
-  --foreground: #ffffff;
-  --card: #111a2e;
-  --card-foreground: #ffffff;
-  --popover: #162038;
-  --popover-foreground: #ffffff;
-  --primary: #6366f1;
-  --primary-foreground: #ffffff;
-  --secondary: #1b2745;
-  --secondary-foreground: #ffffff;
-  --muted: #162038;
-  --muted-foreground: #b4c0d8;
-  --accent: #1b2745;
-  --accent-foreground: #ffffff;
-  --destructive: #f87171;
-  --border: #223052;
-  --input: #2b3a5e;
-  --ring: #818cf8;
+  --background: #171410;
+  --foreground: #f6f1e9;
+  --card: #201c17;
+  --card-foreground: #f6f1e9;
+  --popover: #26211b;
+  --popover-foreground: #f6f1e9;
+  --primary: #ff8a33;
+  --primary-foreground: #1f1b16;
+  --secondary: #2a251e;
+  --secondary-foreground: #f6f1e9;
+  --muted: #2a251e;
+  --muted-foreground: #b9afa0;
+  --accent: #3a2a1a;
+  --accent-foreground: #f6f1e9;
+  --destructive: #f0786f;
+  --border: #38322a;
+  --input: #4a4338;
+  --ring: #ff8a33;
 
-  --brand: #a5b4fc;
-  --brand-strong: #6366f1;
-  --ok: #34d399;
-  --warn: #fb923c;
-  --bad: #f87171;
+  --brand: #ff9a4d;
+  --brand-strong: #ff8a33;
+  --ok: #7ccf8a;
+  --warn: #f0b84a;
+  --bad: #f0786f;
+  --ok-soft: #1f3324;
+  --warn-soft: #3a2e14;
+  --bad-soft: #3d2220;
 
-  --chart-1: #6366f1;
-  --chart-2: #a5b4fc;
-  --chart-3: #4338ca;
-  --chart-4: #34d399;
-  --chart-5: #fb923c;
+  --chart-1: #ff8a33;
+  --chart-2: #b8662a;
+  --chart-3: #6b3d1a;
+  --chart-4: #7ccf8a;
+  --chart-5: #f0b84a;
 
-  --sidebar: #0e1628;
-  --sidebar-foreground: #ffffff;
-  --sidebar-primary: #6366f1;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #1b2745;
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #223052;
-  --sidebar-ring: #818cf8;
+  --sidebar: #1c1814;
+  --sidebar-foreground: #f6f1e9;
+  --sidebar-primary: #ff8a33;
+  --sidebar-primary-foreground: #1f1b16;
+  --sidebar-accent: #3a2a1a;
+  --sidebar-accent-foreground: #f6f1e9;
+  --sidebar-border: #38322a;
+  --sidebar-ring: #ff8a33;
 
-  --elev-1: 0 1px 3px 0 rgba(0, 0, 0, 0.35), 0 1px 2px -1px rgba(0, 0, 0, 0.3);
-  --elev-2: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.35);
+  --elev-1: none;
+  --elev-2: 0 4px 16px -4px rgba(0, 0, 0, 0.5);
 
-  --tile-empty-bg: #172036;
-  --tile-empty-fg: #8493b3;
-  --tile-empty-border: #223052;
+  --tile-empty-bg: #2a251e;
+  --tile-empty-fg: #8f8575;
+  --tile-empty-border: #38322a;
 }
 
 /* Type scale (replaces Tailwind's smaller defaults): readable on a phone and on the front-desk PC. */
@@ -146,6 +153,9 @@
   --color-ok: var(--ok);
   --color-warn: var(--warn);
   --color-bad: var(--bad);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn-soft: var(--warn-soft);
+  --color-bad-soft: var(--bad-soft);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -167,11 +177,11 @@
   --shadow-pop: var(--elev-2);
   --radius-sm: calc(var(--radius) - 2px);
   --radius-md: var(--radius);
-  --radius-lg: calc(var(--radius) + 2px);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
+  --radius-lg: var(--radius);
+  --radius-xl: var(--radius);
+  --radius-2xl: var(--radius);
+  --radius-3xl: var(--radius);
+  --radius-4xl: calc(var(--radius) - 2px);
 }
 
 @layer base {
@@ -188,24 +198,17 @@
 /* Scoreboard typography: Barlow Condensed (800) + tabular figures for every number that matters. */
 .font-display { font-family: var(--font-display), "Arial Narrow", sans-serif; letter-spacing: 0.02em; }
 .numeral { font-family: var(--font-display), "Arial Narrow", sans-serif; font-variant-numeric: tabular-nums; font-weight: 800; line-height: 1; }
-.eyebrow { font-family: var(--font-display), sans-serif; text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.875rem; font-weight: 700; color: var(--muted-foreground); }
+.eyebrow { font-size: 0.875rem; font-weight: 600; color: var(--muted-foreground); }
+table td, table th { font-variant-numeric: tabular-nums; }
 
-/* ---- Streak tiles: slate -> light indigo -> indigo -> deep indigo + flame -> glowing indigo-violet-fire ---- */
+/* ---- Streak tiles: flat warm steps, no glow ---- */
 .tile-l0 { background: var(--tile-empty-bg); color: var(--tile-empty-fg); border: 1px solid var(--tile-empty-border); }
-.tile-l1 { background: #c7d2fe; color: #1e1b4b; border: 1px solid #e0e7ff; }
-.tile-l2 { background: #6366f1; color: #fff; border: 1px solid #818cf8; }
-.tile-l3 { background: #4338ca; color: #fff; border: 1px solid #6366f1; }
-.tile-l4 {
-  background: linear-gradient(160deg, #4f46e5 0%, #a855f7 55%, #fb923c 100%);
-  color: #fff; border: 1px solid #c4b5fd;
-  animation: fire-glow 1.8s ease-in-out infinite;
-}
+.tile-l1 { background: #ffe3c7; color: #5a2a05; border: 1px solid #ffd2a6; }
+.tile-l2 { background: #ffb36b; color: #3a1b03; border: 1px solid #ff9f47; }
+.tile-l3 { background: #ff7a1a; color: #1f1b16; border: 1px solid #e8650a; }
+.tile-l4 { background: #d9550a; color: #ffffff; border: 1px solid #b4470a; }
 .tile-today { outline: 2px solid var(--foreground); outline-offset: 2px; }
 .text-white .tile-today { outline-color: #fff; } /* on the coloured kiosk result screens */
-@keyframes fire-glow {
-  0%, 100% { box-shadow: 0 0 10px 0 rgba(168, 85, 247, .5), 0 0 22px 2px rgba(251, 146, 60, .22); }
-  50% { box-shadow: 0 0 18px 3px rgba(168, 85, 247, .8), 0 0 34px 8px rgba(251, 146, 60, .4); }
-}
 .flame { display: inline-block; transform-origin: 50% 90%; animation: flicker .9s ease-in-out infinite alternate; }
 @keyframes flicker { 0% { transform: scale(1) rotate(-3deg); } 100% { transform: scale(1.14) rotate(3deg); } }
 .pop-in { animation: pop-in .55s cubic-bezier(.2, 1.3, .4, 1) both; }
@@ -214,4 +217,4 @@
 @keyframes slide-up { 0% { transform: translateY(14px); opacity: 0; } 100% { transform: none; opacity: 1; } }
 .confetti { animation: confetti-fall 3s linear infinite; opacity: 0; }
 @keyframes confetti-fall { 0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(105vh) rotate(540deg); opacity: .9; } }
-@media (prefers-reduced-motion: reduce) { .tile-l4, .flame, .pop-in, .slide-up, .confetti { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .flame, .pop-in, .slide-up, .confetti { animation: none; } }

@@ -3,7 +3,7 @@ import type { Level } from "@/lib/streak-rules";
 
 /**
  * The main thing on the member's phone: the streak as a huge scoreboard number.
- * The card's colour is the streak level (neutral -> light purple -> purple -> deep purple + flame -> glowing fire),
+ * The card's colour is the streak level (neutral -> light orange -> orange -> deep orange + flame -> fire),
  * so the screen itself "heats up" as the streak grows.
  */
 export function StreakHero({ current, level, checkedInToday }: { current: number; level: Level; checkedInToday: boolean }) {

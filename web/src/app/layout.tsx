@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 };
 export const viewport: Viewport = {
   viewportFit: "cover", // use the whole phone screen, including behind the notch (the member tab bar adds safe-area padding)
-  themeColor: [{ media: "(prefers-color-scheme: light)", color: "#f8fafc" }, { media: "(prefers-color-scheme: dark)", color: "#0b1120" }],
+  themeColor: [{ media: "(prefers-color-scheme: light)", color: "#fbf7f0" }, { media: "(prefers-color-scheme: dark)", color: "#171410" }],
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

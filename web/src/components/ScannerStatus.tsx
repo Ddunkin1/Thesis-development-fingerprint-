@@ -14,7 +14,7 @@ export function ScannerStatus({ className = "" }: { className?: string }) {
     bridge_off: { dot: "bg-bad animate-pulse", text: "Check-in offline", tip: PROBLEM_TEXT.bridge_off.help },
   }[state];
   return (
-    <div title={view.tip} role="status" className={`flex items-center gap-2.5 rounded-xl border bg-card px-3.5 py-2.5 text-[0.8125rem] font-medium shadow-card ${className}`}>
+    <div title={view.tip} role="status" className={`flex items-center gap-2.5 rounded-lg border bg-card px-3.5 py-2.5 text-[0.8125rem] font-medium ${className}`}>
       <Fingerprint className="size-4 shrink-0 text-muted-foreground" aria-hidden />
       <span className="flex-1 truncate">{view.text}</span>
       <span className={`size-2.5 shrink-0 rounded-full ${view.dot}`} aria-hidden />

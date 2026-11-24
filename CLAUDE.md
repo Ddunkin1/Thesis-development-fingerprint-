@@ -28,6 +28,7 @@ Verify web changes with `npm run lint` and `npm run build`.
 ## Rules / gotchas
 - **Next.js 16 differs from training data.** Before writing Next code, check `web/node_modules/next/dist/docs/` for the relevant guide (see `web/AGENTS.md`).
 - Business rules: fixed monthly fee (`MEMBERSHIP_PRICE`, default 800, server-enforced); username = lastname+`2026` (`cruz2026`, `cruz2026a`...), default password = lastname+`Chaq`, forced change at first login; check-in -> check-out after 2 min; expired members get no attendance row; renewal +30 days (from expiry if active, else from today); streak tolerates 1 missed day/week.
+- Design: all tokens live in `web/src/app/globals.css` (warm cream/white, ONE tangerine accent, 8px radius / 6px chips, no card shadows, no gradients, flat status fills `*-soft`; display font only for titles and big numbers). Don't hardcode colors in components.
 - Timezone `Asia/Manila` (`lib/time.ts`). Store only fingerprint templates, never images (RA 10173 consent before enrollment).
 - Secrets live in `web/.env.local` and `bridge/appsettings.local.json`. Never print, commit, or copy them.
 - Don't guess: if a file, function, or API isn't confirmed by reading it, say so instead of assuming.

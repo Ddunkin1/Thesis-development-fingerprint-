@@ -1,5 +1,5 @@
 "use client";
-import { Download, Fingerprint, Flame, Hourglass, KeyRound, MoreHorizontal, Pencil, RefreshCw, Search, Trash2, UserPlus, CheckCircle2 } from "lucide-react";
+import { Fingerprint, Flame, KeyRound, MoreHorizontal, Pencil, Search, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -21,6 +21,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { StripSkeleton } from "./skeletons";
+import { peek, put } from "@/lib/client-cache";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface Member {
@@ -35,12 +37,12 @@ type Dialogs =
 type Filter = "all" | "active" | "expiring" | "expired";
 type Sort = "expiry" | "name" | "streak";
 
-// status pills from the design: soft tinted fill + a dot
+// status chips: flat soft fill with matching text
 const STATUS: Record<Member["status"], { label: string; pill: string; dot: string }> = {
-  active: { label: "Active", pill: "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300", dot: "bg-emerald-500" },
-  expiring: { label: "Expiring soon", pill: "bg-orange-100 text-orange-800 dark:bg-orange-500/15 dark:text-orange-300", dot: "bg-orange-500" },
-  expired: { label: "Expired", pill: "bg-red-100 text-red-800 dark:bg-red-500/15 dark:text-red-300", dot: "bg-red-500" },
-  none: { label: "No plan", pill: "bg-slate-100 text-slate-700 dark:bg-slate-500/15 dark:text-slate-300", dot: "bg-slate-400" },
+  active: { label: "Active", pill: "bg-ok-soft text-ok", dot: "bg-ok" },
+  expiring: { label: "Expiring soon", pill: "bg-warn-soft text-warn", dot: "bg-warn" },
+  expired: { label: "Expired", pill: "bg-bad-soft text-bad", dot: "bg-bad" },
+  none: { label: "No plan", pill: "bg-muted text-muted-foreground", dot: "bg-muted-foreground" },
 };
 
 /** The page reads ?q= (top-bar search) and ?status= (links on the dashboard) and restarts the screen when they change. */
@@ -56,7 +58,7 @@ function MembersInner({ initialQ, initialFilter }: { initialQ: string; initialFi
   const [q, setQ] = useState(initialQ);
   const [filter, setFilter] = useState<Filter>(initialFilter);
   const [sort, setSort] = useState<Sort>("expiry");
-  const [rows, setRows] = useState<Member[] | null>(null);
+  const [rows, setRows] = useState<Member[] | null>(() => peek<Member[]>("admin:members"));
   const [dialog, setDialog] = useState<Dialogs>(null);
   const [value, setValue] = useState("");       // text/amount field inside dialogs
   const [template, setTemplate] = useState<string | null>(null);
@@ -68,7 +70,7 @@ function MembersInner({ initialQ, initialFilter }: { initialQ: string; initialFi
 
   const load = useCallback(async () => {
     const res = await fetch("/api/admin/members");
-    if (res.ok) setRows((await res.json()).members);
+    if (res.ok) setRows(put("admin:members", (await res.json()).members as Member[]));
   }, []);
 
   useEffect(() => { const t = setTimeout(load, 0); return () => clearTimeout(t); }, [load]);
@@ -119,52 +121,52 @@ function MembersInner({ initialQ, initialFilter }: { initialQ: string; initialFi
   return (
     <div className="min-w-0">
       <PageHeader title="Members" description="Renew, edit, re-enroll fingerprints and check streaks.">
-        <Link href="/api/admin/members?format=csv" prefetch={false} download className={buttonVariants({ variant: "outline", className: "rounded-full bg-card" })}><Download /> Export CSV</Link>
-        <Link href="/admin/register" className={buttonVariants({ className: "rounded-full" })}><UserPlus /> New member</Link>
+        <Link href="/api/admin/members?format=csv" prefetch={false} download className={buttonVariants({ variant: "outline", className: "bg-card" })}>Export CSV</Link>
+        <Link href="/admin/register" className={buttonVariants({ })}>New member</Link>
       </PageHeader>
 
       <BridgeBanner className="mb-5" />
 
-      <section aria-label="Summary" className="mb-6 grid grid-cols-2 divide-x divide-y rounded-xl border bg-card shadow-card md:grid-cols-4 md:divide-y-0">
+      {rows === null ? <StripSkeleton /> : <section aria-label="Summary" className="mb-6 grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border md:grid-cols-4">
         {([
           ["Active members", String(count("active") + count("expiring")), `${all.length} in total`, "text-brand"],
           ["Due within 7 days", String(dueSoon), dueSoon ? "ask them to renew" : "nobody yet", dueSoon ? "text-warn" : ""],
           ["Can scan in", `${enrolled}%`, `${all.filter((r) => r.fingers > 0).length} of ${all.length} have a fingerprint`, ""],
           ["Average streak", avgStreak.toFixed(1), "days, across everyone", ""],
         ] as const).map(([label, value, note, tone]) => (
-          <div key={label} className="px-6 py-5">
-            <div className={`numeral text-5xl ${tone}`}>{value}</div>
-            <div className="mt-2 text-sm font-medium">{label}</div>
-            <div className="text-[0.8125rem] text-muted-foreground">{note}</div>
+          <div key={label} className="bg-card px-5 py-4">
+            <div className="text-[0.8125rem] text-muted-foreground">{label}</div>
+            <div className={`numeral mt-1 text-4xl ${tone}`}>{value}</div>
+            <div className="mt-1 text-[0.8125rem] text-muted-foreground">{note}</div>
           </div>
         ))}
-      </section>
+      </section>}
 
-      <section className="mb-5 flex flex-wrap items-center gap-3 rounded-xl border bg-card p-3 shadow-card" aria-label="Filters">
+      <section className="mb-5 flex flex-wrap items-center gap-3 rounded-lg border bg-card p-3" aria-label="Filters">
         <div className="relative w-full min-w-56 sm:w-72">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input className="h-10 rounded-full bg-accent/50 pl-10" placeholder="Search name or username…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search members" />
+          <Input className="h-10 pl-10" placeholder="Search name or username…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search members" />
         </div>
         <div className="flex flex-wrap gap-2" role="group" aria-label="Status filter">
           {CHIPS.map((c) => (
             <button key={c.key} type="button" onClick={() => setFilter(c.key)} aria-pressed={filter === c.key}
-              className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${filter === c.key ? "bg-primary text-primary-foreground shadow-card" : "bg-accent text-foreground/80 hover:text-foreground"}`}>
+              className={`rounded-md px-3.5 py-2 text-sm font-semibold transition-colors ${filter === c.key ? "bg-primary text-primary-foreground" : "bg-muted text-foreground/80 hover:text-foreground"}`}>
               {c.label} ({c.n})
             </button>
           ))}
         </div>
         <label className="ml-auto flex items-center gap-2 text-sm">
-          <span className="eyebrow">Sort by</span>
+          <span className="text-muted-foreground">Sort by</span>
           <select value={sort} onChange={(e) => setSort(e.target.value as Sort)}
-            className="h-10 rounded-lg border bg-accent/50 px-3 text-sm font-medium outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30">
+            className="h-10 rounded-lg border bg-card px-3 text-sm font-medium outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30">
             <option value="expiry">Expiry date (nearest)</option><option value="name">Name (A to Z)</option><option value="streak">Longest streak</option>
           </select>
         </label>
       </section>
 
-      <div className="overflow-hidden rounded-xl border bg-card shadow-card">
+      <div className="overflow-hidden rounded-lg border bg-card">
         <Table>
-          <TableHeader className="bg-accent/50">
+          <TableHeader className="bg-muted">
             <TableRow>
               <TableHead>Member</TableHead><TableHead>Status</TableHead><TableHead className="hidden sm:table-cell">Expires</TableHead>
               <TableHead className="hidden md:table-cell">Streak</TableHead><TableHead className="hidden md:table-cell">Prints</TableHead><TableHead className="w-0" />
@@ -172,14 +174,13 @@ function MembersInner({ initialQ, initialFilter }: { initialQ: string; initialFi
           </TableHeader>
           <TableBody>
             {rows === null && Array.from({ length: 3 }, (_, i) => <TableRow key={i}><TableCell colSpan={6}><Skeleton className="h-10 w-full" /></TableCell></TableRow>)}
-            {rows !== null && visible.length === 0 && <TableRow><TableCell colSpan={6} className="py-10 text-center text-muted-foreground">No members match. Try another filter.</TableCell></TableRow>}
+            {rows !== null && visible.length === 0 && <TableRow><TableCell colSpan={6} className="py-10 text-center text-muted-foreground">No members match.</TableCell></TableRow>}
             {visible.map((r) => (
               <TableRow key={r.id}>
                 <TableCell>
                   <div className="flex items-center gap-3.5">
-                    <span className="relative flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-accent text-sm font-bold text-brand">
                       {initials(r.fullName)}
-                      <span className={`absolute -bottom-0.5 -right-0.5 size-3.5 rounded-full border-2 border-card ${STATUS[r.status].dot}`} />
                     </span>
                     <div className="min-w-0">
                       <div className="truncate font-semibold">{r.fullName}</div>
@@ -188,28 +189,23 @@ function MembersInner({ initialQ, initialFilter }: { initialQ: string; initialFi
                   </div>
                 </TableCell>
                 <TableCell>
-                  <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-[0.8125rem] font-semibold ${STATUS[r.status].pill}`}>
-                    <span className={`size-2 rounded-full ${STATUS[r.status].dot}`} />{STATUS[r.status].label}
-                  </span>
+                  <span className={`inline-flex rounded-md px-2.5 py-1 text-[0.8125rem] font-semibold ${STATUS[r.status].pill}`}>{STATUS[r.status].label}</span>
                 </TableCell>
                 <TableCell className="hidden sm:table-cell">
                   <div className="font-semibold tabular-nums">{r.expiryDate ?? "-"}</div>
-                  {r.daysLeft !== null && r.daysLeft >= 0 && <div className="mt-0.5 flex items-center gap-1 text-[0.8125rem] text-brand"><Hourglass className="size-3.5" />{r.daysLeft} day{r.daysLeft === 1 ? "" : "s"} left</div>}
+                  {r.daysLeft !== null && r.daysLeft >= 0 && <div className="mt-0.5 text-[0.8125rem] text-muted-foreground">{r.daysLeft} day{r.daysLeft === 1 ? "" : "s"} left</div>}
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
-                  <div className="flex items-center gap-2.5">
-                    <span className={`flex size-9 items-center justify-center rounded-lg ${r.streak > 0 ? "bg-accent text-brand" : "bg-muted text-muted-foreground"}`}><Flame className="size-4" /></span>
-                    <div><span className="numeral text-2xl">{r.streak}</span> <span className="font-display text-sm font-bold text-muted-foreground">DAY{r.streak === 1 ? "" : "S"}</span></div>
-                  </div>
+                  <span className="numeral text-2xl">{r.streak}</span> <span className="text-[0.8125rem] text-muted-foreground">day{r.streak === 1 ? "" : "s"}</span>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
                   {r.fingers > 0
-                    ? <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1 text-[0.8125rem] font-semibold text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300"><CheckCircle2 className="size-3.5" />{r.fingers} enrolled</span>
-                    : <span className="inline-flex rounded-lg bg-red-50 px-2.5 py-1 text-[0.8125rem] font-semibold text-red-800 dark:bg-red-500/15 dark:text-red-300">None enrolled</span>}
+                    ? <span className="inline-flex rounded-md bg-ok-soft px-2.5 py-1 text-[0.8125rem] font-semibold text-ok">{r.fingers} enrolled</span>
+                    : <span className="inline-flex rounded-md bg-bad-soft px-2.5 py-1 text-[0.8125rem] font-semibold text-bad">None enrolled</span>}
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center justify-end gap-1.5">
-                    <Button size="sm" onClick={() => open({ kind: "renew", m: r })}><RefreshCw /> Renew</Button>
+                    <Button size="sm" onClick={() => open({ kind: "renew", m: r })}>Renew</Button>
                     <DropdownMenu>
                       <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label={`More actions for ${r.fullName}`} />}><MoreHorizontal /></DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
@@ -227,7 +223,7 @@ function MembersInner({ initialQ, initialFilter }: { initialQ: string; initialFi
             ))}
           </TableBody>
         </Table>
-        <div className="border-t bg-accent/40 px-5 py-3 text-sm text-muted-foreground">Showing {visible.length} of {all.length} member{all.length === 1 ? "" : "s"}</div>
+        <div className="border-t px-5 py-3 text-sm text-muted-foreground">Showing {visible.length} of {all.length} member{all.length === 1 ? "" : "s"}</div>
       </div>
 
       <Dialog open={dialog !== null} onOpenChange={(o) => { if (!o) close(); }}>
@@ -239,7 +235,7 @@ function MembersInner({ initialQ, initialFilter }: { initialQ: string; initialFi
                 <DialogDescription>{m.status === "expired" ? "Expired: the new expiry will be today + 30 days." : "Not expired yet: 30 days are added to the current expiry."}</DialogDescription>
               </DialogHeader>
               <div className="flex items-center justify-between rounded-md bg-muted px-4 py-3">
-                <div className="eyebrow">Membership fee · 30 days</div>
+                <div className="text-sm text-muted-foreground">Membership fee, 30 days</div>
                 <div className="numeral text-4xl"><span className="mr-1.5 align-top font-sans text-lg font-medium text-muted-foreground">₱</span>{price ?? "…"}</div>
               </div>
               {error && <p className="text-sm text-bad">{error}</p>}

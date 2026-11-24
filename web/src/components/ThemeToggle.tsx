@@ -21,14 +21,14 @@ export function ThemeToggle({ compact = false, block = false, className = "" }: 
   const { theme, setTheme } = useTheme();
   const mounted = useMounted();
   return (
-    <div role="radiogroup" aria-label="Theme" className={`${block ? "flex" : "inline-flex"} rounded-xl border bg-accent p-1 ${className}`}>
+    <div role="radiogroup" aria-label="Theme" className={`${block ? "flex" : "inline-flex"} rounded-lg border bg-muted p-1 ${className}`}>
       {OPTIONS.map(({ value, label, Icon }) => {
         const active = mounted && theme === value;
         return (
           <button key={value} type="button" role="radio" aria-checked={active} aria-label={label} title={label}
             onClick={() => setTheme(value)}
             className={`flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${block ? "flex-1" : ""}
-              ${active ? "bg-card text-foreground shadow-card" : "text-muted-foreground hover:text-foreground"}`}>
+              ${active ? "bg-card text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
             <Icon className="size-4" />{!compact && !block && label}
           </button>
         );

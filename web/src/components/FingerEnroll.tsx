@@ -1,5 +1,5 @@
 "use client";
-import { Check, Fingerprint, X } from "lucide-react";
+import { Fingerprint } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { bridge } from "@/lib/bridge-client";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ function Ring({ percent, state }: { percent: number; state: "idle" | "busy" | "d
           strokeDasharray={c} strokeDashoffset={c - (c * percent) / 100}
           className={`transition-[stroke-dashoffset] duration-500 ${state === "done" ? "stroke-ok" : "stroke-primary"}`} />
       </svg>
-      <div className="absolute inset-4 flex flex-col items-center justify-center rounded-full bg-card shadow-card">
+      <div className="absolute inset-4 flex flex-col items-center justify-center rounded-full bg-card">
         <Fingerprint className={`size-9 ${state === "done" ? "text-ok" : state === "busy" ? "animate-pulse text-brand" : "text-muted-foreground"}`} />
         <span className="numeral mt-1 text-xl">{percent}%</span>
       </div>
@@ -63,13 +63,13 @@ export function FingerEnroll({
   const done = !!template && !busy;
   const percent = done ? 100 : Math.round((count / 3) * 100);
   return (
-    <div className={`rounded-xl border p-5 ${done ? "border-ok/40 bg-emerald-50/60 dark:bg-emerald-500/5" : "bg-accent/40"}`}>
+    <div className={`rounded-lg border p-5 ${done ? "border-ok/50 bg-ok-soft" : "bg-muted"}`}>
       <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
         <Ring percent={percent} state={done ? "done" : busy ? "busy" : "idle"} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-3">
-            <h3 className="font-display text-2xl font-extrabold uppercase leading-none">{label}</h3>
-            <span className={`eyebrow ${required ? "!text-brand" : ""}`}>{required ? "Required" : "Optional"}</span>
+            <h3 className="text-lg font-semibold leading-none">{label}</h3>
+            <span className={`text-[0.8125rem] font-semibold ${required ? "text-brand" : "text-muted-foreground"}`}>{required ? "Required" : "Optional"}</span>
           </div>
           {hint && <p className="mt-2 text-sm text-muted-foreground">{hint}</p>}
 
@@ -78,9 +78,9 @@ export function FingerEnroll({
               const ok = count >= n;
               const active = busy && count + 1 === n;
               return (
-                <div key={n} className={`flex h-12 flex-col items-center justify-center rounded-lg text-center font-display text-sm font-extrabold uppercase leading-tight tracking-wide transition-colors
-                  ${ok ? "bg-emerald-600 text-white" : active ? "animate-pulse bg-primary/15 text-brand" : "bg-card text-muted-foreground"} ${ok || active ? "" : "border"}`}>
-                  {ok ? <span className="flex items-center gap-1"><Check className="size-3.5" />Scan {n}: OK</span> : <>Scan {n}<span className="text-[0.75rem] font-bold normal-case tracking-normal opacity-80">{active ? "Tap the lens" : "Waiting"}</span></>}
+                <div key={n} className={`flex h-12 flex-col items-center justify-center rounded-md text-center text-sm font-semibold leading-tight transition-colors
+                  ${ok ? "bg-ok text-white" : active ? "animate-pulse bg-accent text-brand" : "bg-card text-muted-foreground"} ${ok || active ? "" : "border"}`}>
+                  {ok ? <span>Scan {n}: OK</span> : <>Scan {n}<span className="text-[0.75rem] font-medium opacity-80">{active ? "Tap the lens" : "Waiting"}</span></>}
                 </div>
               );
             })}
@@ -93,11 +93,11 @@ export function FingerEnroll({
           </p>
 
           <div className="mt-3 flex flex-wrap gap-2">
-            <Button type="button" onClick={start} disabled={disabled || busy} variant={done ? "outline" : "default"} className="rounded-full">
-              <Fingerprint /> {busy ? "Scanning…" : done ? "Scan again" : "Start 3-scan enrollment"}
+            <Button type="button" onClick={start} disabled={disabled || busy} variant={done ? "outline" : "default"}>
+              {busy ? "Scanning…" : done ? "Scan again" : "Start 3-scan enrollment"}
             </Button>
             {busy && <Button type="button" variant="ghost" onClick={() => bridge.cancel()}>Cancel</Button>}
-            {done && <Button type="button" variant="ghost" onClick={() => { onTemplate(null); setCount(0); }}><X /> Remove</Button>}
+            {done && <Button type="button" variant="ghost" onClick={() => { onTemplate(null); setCount(0); }}>Remove</Button>}
           </div>
         </div>
       </div>
