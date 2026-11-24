@@ -44,6 +44,7 @@ Put them in `web/.env.local` (never commit it; `.env*` is git-ignored). `web/.en
 | `ADMIN_USERNAME` / `ADMIN_PASSWORD` | credentials created by `npm run seed:admin` |
 | `BRIDGE_API_KEY` | secret shared with the bridge (long random string) |
 | `SESSION_SECRET` | signs the login cookie (32+ random bytes, hex) |
+| `MEMBERSHIP_PRICE` | fixed monthly fee in pesos, default `800` (registration and renewal always charge this; the server enforces it) |
 | `APP_TIMEZONE` | defaults to `Asia/Manila` |
 | `NEXT_PUBLIC_BRIDGE_URL` | where the *browser* finds the bridge, default `http://localhost:5055` |
 | `PORT` | read automatically by `next start` (Railway sets it) |
@@ -88,7 +89,7 @@ CORS only allows the origins in `AllowedOrigins`; other origins get 403.
 
 ### Using it
 
-1. **Register** (admin) → monthly member (full name, consent, 3-scan enrollment, optional backup finger, payment) or walk-in.
+1. **Register** (admin) → monthly member (full name, consent, 3-scan enrollment, optional backup finger; the fee is a fixed ₱800) or walk-in (amount entered).
    Username = lastname + `2026` (`cruz2026`, then `cruz2026a`…), default password = lastname + `Chaq`; the member must change it at first login.
 2. **Kiosk** (`/kiosk`) → fullscreen check-in screen; leave it open on the front-desk PC next to the bridge.
 3. **Members / Attendance / Reports / Leaderboard / Dashboard** in the admin menu.
@@ -114,7 +115,7 @@ origin check on state-changing requests, bridge key compared in constant time, R
 2. In Railway create a project → **Deploy from GitHub repo**. In the service **Settings**: Build command `npm run build`,
    Start command `npm run start`, **Pre-deploy command** `npm run migrate` (runs the migrations on every deploy).
 3. Under **Variables** set: `DATABASE_URL`, `DATABASE_URL_UNPOOLED` (from `neon connection-string`), `ADMIN_USERNAME`, `ADMIN_PASSWORD`,
-   `BRIDGE_API_KEY`, `SESSION_SECRET`, `APP_TIMEZONE=Asia/Manila`. `PORT` is provided by Railway.
+   `BRIDGE_API_KEY`, `SESSION_SECRET`, `APP_TIMEZONE=Asia/Manila`, `MEMBERSHIP_PRICE=800`. `PORT` is provided by Railway.
    **Change `ADMIN_PASSWORD` to a strong one first** (the dev value is only for localhost).
 4. Generate a public domain, deploy, then run the admin seed once: `railway run npm run seed:admin` (or temporarily set it as the pre-deploy command).
 5. On the gym PC set `WebAppUrl` and `AllowedOrigins` in `bridge/appsettings.local.json` to the Railway URL
@@ -143,7 +144,8 @@ origin check on state-changing requests, bridge key compared in constant time, R
 - [ ] Kiosk: registered finger → welcome + streak + week tiles; unknown finger → "Fingerprint not recognized, try again"; stop the bridge → red banner.
 - [ ] Kiosk: second scan right away → "already checked in"; scan 2+ minutes later → checked out; scan after that → "already checked out".
 - [ ] Expired member (set the expiry in the past) → "Membership expired, please renew" and **no** attendance row.
-- [ ] Renewal: active member +30 days on top of the expiry; expired member → today + 30 days; each renewal appears in payments/income.
+- [ ] Renewal: active member +30 days on top of the expiry; expired member → today + 30 days; each renewal adds the fixed ₱800 to income.
+- [ ] Delete a member with "returned their money" ticked: a negative refund entry lowers income; without it the sales stay.
 - [ ] Members page: search, status badges (green/yellow/red), edit name, re-enroll, reset password (back to default + forced change), delete.
 - [ ] Streaks: consecutive days raise the tile color (light → purple → deep purple + fire → glowing); one missed day in a week keeps the streak (❄), a second breaks it.
 - [ ] Badges: First Visit, 7-Day Fire, 30 Visits, Comeback (14+ days away) appear once each.
