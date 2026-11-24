@@ -14,6 +14,7 @@ export const metadata: Metadata = {
   description: "Gamified fingerprint attendance for Chaq Gym",
 };
 export const viewport: Viewport = {
+  viewportFit: "cover", // use the whole phone screen, including behind the notch (the member tab bar adds safe-area padding)
   themeColor: [{ media: "(prefers-color-scheme: light)", color: "#f6f6f9" }, { media: "(prefers-color-scheme: dark)", color: "#09090b" }],
 };
 

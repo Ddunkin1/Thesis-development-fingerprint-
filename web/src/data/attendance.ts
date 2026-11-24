@@ -56,3 +56,17 @@ export async function datesForLeaderboard(from: string, to: string, q: Q = query
     [from, to],
   );
 }
+
+/** Number of check-ins in [from, to] (Manila days). */
+export async function visitsBetween(userId: number, from: string, to: string, q: Q = query): Promise<number> {
+  const rows = await q<{ n: string }>(`SELECT count(*) AS n FROM attendance WHERE user_id = $1 AND ${DAY} BETWEEN $2::date AND $3::date`, [userId, from, to]);
+  return Number(rows[0].n);
+}
+
+/** A member's latest visits, newest first. */
+export async function recentVisits(userId: number, limit = 10, q: Q = query) {
+  return q<{ day: string; check_in: Date; check_out: Date | null }>(
+    `SELECT ${DAY} AS day, check_in, check_out FROM attendance WHERE user_id = $1 ORDER BY check_in DESC LIMIT $2`,
+    [userId, limit],
+  );
+}

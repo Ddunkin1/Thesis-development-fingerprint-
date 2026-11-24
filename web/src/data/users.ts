@@ -9,6 +9,7 @@ export interface UserRow {
   role: "admin" | "member";
   must_change_password: boolean;
   consent_given: boolean;
+  leaderboard_opt_out: boolean;
   created_at: string;
 }
 
@@ -42,4 +43,8 @@ export async function insertMember(
     [u.fullName, u.username, u.passwordHash, u.consent],
   );
   return Number(rows[0].id);
+}
+
+export async function setLeaderboardOptOut(userId: number, optOut: boolean) {
+  await query("UPDATE users SET leaderboard_opt_out = $2 WHERE id = $1 AND role = 'member'", [userId, optOut]);
 }

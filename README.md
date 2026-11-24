@@ -97,7 +97,14 @@ CORS only allows the origins in `AllowedOrigins`; other origins get 403.
    Username = lastname + `2026` (`cruz2026`, then `cruz2026a`…), default password = lastname + `Chaq`; the member must change it at first login.
 2. **Kiosk** (`/kiosk`) → fullscreen check-in screen; leave it open on the front-desk PC next to the bridge.
 3. **Members / Attendance / Reports / Leaderboard / Dashboard** in the admin menu.
-4. **Theme:** Light / Dark / System switch at the bottom of the admin sidebar (also on the login page and the kiosk). It defaults to dark and the choice is remembered per browser.
+4. **Member app** (`/member`, built phone-first): members sign in with their own account (default password changed on first login) and see
+   - **Home:** a big streak number whose card gets hotter with the streak, this week's tiles, the next badge goal, their numbers, rank title
+     (Rookie, Regular, Grinder, Beast, Legend by total visits) and membership days left;
+   - **Board:** this month's top 10 by best streak (names shown as "Juan C."), their own rank and how far behind the person above;
+   - **Me:** badge collection (earned or locked with a hint), recent visits, a switch to hide from the leaderboard, theme, change password.
+   Everything is read from their own session (a member can never see another member's data), and the admin pages are closed to members.
+   It is ready to become an installable app (PWA) later: single column, tab bar, safe-area padding.
+5. **Theme:** Light / Dark / System switch at the bottom of the admin sidebar (also on the login page and the kiosk). It defaults to dark and the choice is remembered per browser.
 
 ## Code map (for the thesis defense)
 
@@ -172,5 +179,6 @@ watchdog normally brings it back within seconds, otherwise open ChaqBridge from 
 - [ ] Badges: First Visit, 7-Day Fire, 30 Visits, Comeback (14+ days away) appear once each.
 - [ ] Dashboard numbers match the data (active/expiring/expired, check-ins, walk-ins, income today/month, peak hours).
 - [ ] Attendance history filters by date and name; CSV opens in Excel. Each report tab loads and exports CSV.
+- [ ] Member app on a phone: first login forces a new password; Home shows the streak, week tiles and next badge; Board shows masked names and the member's own rank; Me shows badges and visits; the leaderboard switch hides/shows the member; a member cannot open `/admin` or `/api/admin/*`.
 - [ ] Theme: the Light / Dark / System switch changes every page (login, admin, kiosk, dialogs, toasts), survives a reload, and "System" follows the PC setting.
 - [ ] Railway readiness: variables set, `ADMIN_PASSWORD` changed, `/login` works over HTTPS, bridge `AllowedOrigins` updated.
