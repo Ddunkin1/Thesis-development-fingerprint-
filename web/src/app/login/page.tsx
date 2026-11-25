@@ -1,6 +1,6 @@
 "use client";
 import { ArrowRight, Eye, EyeOff, Lock, UserRound } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { homeOf } from "@/lib/roles";
 import { AuthFrame } from "@/components/AuthFrame";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,17 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [show, setShow] = useState(false);
+
+  // The browser may show a saved copy of this page (Back button) without asking the server.
+  // If the person is still signed in, send them back into the app.
+  useEffect(() => {
+    let stop = false;
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((me) => { if (me && !stop) window.location.replace(homeOf(me.role)); })
+      .catch(() => {}); // offline: just show the form
+    return () => { stop = true; };
+  }, []);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -29,7 +40,7 @@ export default function LoginPage() {
       return;
     }
     // Full navigation so proxy.ts routes by role (admin / member / forced password change).
-    window.location.href = data.mustChange ? "/change-password" : homeOf(data.role);
+    window.location.replace(data.mustChange ? "/change-password" : homeOf(data.role)); // replace: Back will not return here
   }
 
   return (

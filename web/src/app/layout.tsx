@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Barlow_Condensed, Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
+import { HistoryGuard } from "@/components/HistoryGuard";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" suppressHydrationWarning className={`${jakarta.variable} ${geistMono.variable} ${display.variable} h-full`}>
       <body className="flex min-h-full flex-col">
         <ThemeProvider>
+          <HistoryGuard />
           {children}
           <Toaster position="top-center" />
         </ThemeProvider>

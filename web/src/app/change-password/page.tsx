@@ -24,7 +24,7 @@ export default function ChangePasswordPage() {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) { setError(data.error ?? "Could not change password."); setBusy(false); return; }
-    window.location.href = homeOf(data.role);
+    window.location.replace(homeOf(data.role));
   }
 
   const field = (id: string, label: string) => (
