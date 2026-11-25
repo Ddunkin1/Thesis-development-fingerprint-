@@ -11,6 +11,8 @@ export interface MemberRow {
   fingers: string;
   streak: number;
   paid: string;
+  consent_given: boolean;
+  consent_at: Date | null;
 }
 
 const escapeLike = (s: string) => s.replace(/[\\%_]/g, (c) => "\\" + c);
@@ -18,7 +20,7 @@ const escapeLike = (s: string) => s.replace(/[\\%_]/g, (c) => "\\" + c);
 export async function listMembers(search: string, q: Q = query): Promise<MemberRow[]> {
   const pattern = "%" + escapeLike(search.trim()) + "%";
   return q<MemberRow>(
-    `SELECT u.id, u.full_name, u.username, u.created_at,
+    `SELECT u.id, u.full_name, u.username, u.created_at, u.consent_given, u.consent_at,
             m.start_date, m.expiry_date,
             (SELECT count(*) FROM fingerprints f WHERE f.user_id = u.id) AS fingers,
             COALESCE(s.current_streak, 0) AS streak,
@@ -37,13 +39,14 @@ export interface MemberBasic {
   id: string;
   full_name: string;
   username: string;
+  consent_given: boolean;
   expiry_date: string | null;
 }
 
 /** One member plus the expiry of their latest membership (null if the id is not a member). */
 export async function findMember(userId: number, q: Q = query): Promise<MemberBasic | null> {
   const rows = await q<MemberBasic>(
-    `SELECT u.id, u.full_name, u.username,
+    `SELECT u.id, u.full_name, u.username, u.consent_given,
             (SELECT expiry_date FROM memberships WHERE user_id = u.id ORDER BY expiry_date DESC LIMIT 1) AS expiry_date
        FROM users u WHERE u.id = $1 AND u.role = 'member'`,
     [userId],

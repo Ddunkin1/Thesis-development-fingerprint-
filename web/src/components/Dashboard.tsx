@@ -6,9 +6,11 @@ import { Bar, BarChart, Cell, XAxis } from "recharts";
 import { BridgeBanner } from "./BridgeBanner";
 import { PageHeader } from "./PageHeader";
 import { initials } from "./admin/TopBar";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { DashboardSkeleton } from "./skeletons";
+import { PinDialog } from "./PinDialog";
+import { lockFigures } from "@/lib/pin-client";
 import { peek, put } from "@/lib/client-cache";
 import { useBridgeInfo, useBridgeStatus } from "@/lib/use-bridge-status";
 
@@ -16,7 +18,8 @@ interface FeedItem { name: string; username: string; isToday: boolean; day: stri
 interface Data {
   today: string;
   members: { active: number; expiring: number; expired: number };
-  checkinsToday: number; stillInGym: number; walkinsToday: number; incomeToday: number; incomeMonth: number; incomeYesterday: number;
+  checkinsToday: number; stillInGym: number; walkinsToday: number;
+  incomeToday: number | null; incomeMonth: number | null; incomeYesterday: number | null; // null until the PIN is typed
   peakHourToday: string | null;
   feed: FeedItem[];
   peakHours: { hour: number; count: number }[];
@@ -64,6 +67,11 @@ export function Dashboard() {
   const [d, setD] = useState<Data | null>(() => peek<Data>("admin:dashboard"));
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [askPin, setAskPin] = useState(false);
+  const [needsPin, setNeedsPin] = useState(false); // true until a PIN has been created
+  useEffect(() => {
+    fetch("/api/admin/pin").then((r) => (r.ok ? r.json() : null)).then((p) => setNeedsPin(p ? !p.isSet : false)).catch(() => {});
+  }, []);
   const scanner = useBridgeStatus();
   const info = useBridgeInfo();
 
@@ -76,8 +84,11 @@ export function Dashboard() {
 
   useEffect(() => {
     const first = setTimeout(load, 0);
-    const t = setInterval(load, 30_000); // keep the front-desk screen fresh
-    return () => { clearTimeout(first); clearInterval(t); };
+    // Keep the front-desk screen fresh, but only while it is being looked at, so an unused tab lets the database sleep.
+    const t = setInterval(() => { if (!document.hidden) load(); }, 60_000);
+    const back = () => { if (!document.hidden) load(); };
+    document.addEventListener("visibilitychange", back);
+    return () => { clearTimeout(first); clearInterval(t); document.removeEventListener("visibilitychange", back); };
   }, [load]);
 
   // "Wednesday, November 25": the date, written the way people say it (set after mount so it is never stale)
@@ -106,7 +117,8 @@ export function Dashboard() {
 
   const chartData = d.peakHours.map((h) => ({ label: hourLabel(h.hour), count: h.count }));
   const peak = d.peakHours.reduce((a, b) => (b.count > a.count ? b : a));
-  const delta = d.incomeToday - d.incomeYesterday;
+  const money = d.incomeToday !== null && d.incomeMonth !== null && d.incomeYesterday !== null;
+  const delta = money ? d.incomeToday! - d.incomeYesterday! : 0;
   const today = d.feed.filter((f) => f.isToday);
   const earlier = d.feed.filter((f) => !f.isToday).slice(0, 5);
 
@@ -115,7 +127,15 @@ export function Dashboard() {
       {header}
       <div className="space-y-6">
         <BridgeBanner />
+        {needsPin && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-warn-soft px-5 py-3">
+            <span className="text-sm font-medium">Create your 4-digit PIN. You need it to renew or delete members and to see income.</span>
+            <Link href="/admin/pin" className={buttonVariants({ size: "sm" })}>Create PIN</Link>
+          </div>
+        )}
         {error && <p className="text-sm text-warn">{error}</p>}
+
+        <PinDialog open={askPin} onOpenChange={setAskPin} onUnlocked={load} what="Income stays visible for 5 minutes." />
 
         {/* ONE focus: who has come in today. Everything else is a compact strip underneath. */}
         <section aria-label="Today" className="flex flex-wrap items-end gap-x-10 gap-y-3 rounded-lg border bg-card px-7 py-6">
@@ -130,15 +150,21 @@ export function Dashboard() {
           </p>
         </section>
 
-        <section aria-label="Summary" className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border md:grid-cols-3 xl:grid-cols-6">
+        <div className="flex justify-end">
+          <Button variant="outline" size="sm" onClick={async () => { if (money) { await lockFigures(); await load(); } else setAskPin(true); }}>
+            {money ? "Hide income" : "Show income"}
+          </Button>
+        </div>
+
+        <section aria-label="Summary" className={`grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border ${money ? "md:grid-cols-3 xl:grid-cols-6" : "md:grid-cols-4"}`}>
           {([
             ["Walk-ins today", String(d.walkinsToday), "", null],
-            ["Income today", peso(d.incomeToday), delta === 0 ? "" : `${delta > 0 ? "+" : "-"}${peso(Math.abs(delta))} vs yesterday`, null],
-            ["Income this month", peso(d.incomeMonth), "", null],
+            ["Income today", money ? peso(d.incomeToday!) : "", delta === 0 ? "" : `${delta > 0 ? "+" : "-"}${peso(Math.abs(delta))} vs yesterday`, null],
+            ["Income this month", money ? peso(d.incomeMonth!) : "", "", null],
             ["Active members", String(d.members.active), "", "active"],
             ["Expiring in 3 days", String(d.members.expiring), "", "expiring"],
             ["Expired", String(d.members.expired), "", "expired"],
-          ] as const).map(([label, value, note, status]) => {
+          ] as const).filter(([label]) => money || !label.startsWith("Income")).map(([label, value, note, status]) => {
             const tone = status === "expiring" && d.members.expiring ? "text-warn" : status === "expired" && d.members.expired ? "text-bad" : "";
             const inner = (
               <>

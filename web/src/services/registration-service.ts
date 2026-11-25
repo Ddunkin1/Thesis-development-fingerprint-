@@ -12,6 +12,7 @@ import * as walkins from "@/data/walkins";
 import * as streaks from "@/data/streaks";
 import { markWalkinConverted } from "@/data/members";
 import { MEMBERSHIP_PRICE } from "@/lib/pricing";
+import { CONSENT_VERSION } from "@/lib/consent";
 import { newTerm } from "./membership-rules";
 
 export class RegistrationError extends Error {}
@@ -48,7 +49,7 @@ export async function registerMonthlyMember(input: {
       return await withTx(async (q) => {
         const taken = await users.usernamesStartingWith(baseUsername(input.fullName), q);
         const username = pickUsername(baseUsername(input.fullName), taken);
-        const userId = await users.insertMember({ fullName: input.fullName, username, passwordHash, consent: true }, q);
+        const userId = await users.insertMember({ fullName: input.fullName, username, passwordHash, consentVersion: CONSENT_VERSION }, q);
         for (const f of input.fingers) await fingerprints.upsertTemplate(userId, f.fingerIndex, f.template, q);
         await memberships.insertMembership(userId, term.start, term.expiry, q);
         await payments.insertPayment({ userId, type: "monthly", amount: MEMBERSHIP_PRICE }, q);

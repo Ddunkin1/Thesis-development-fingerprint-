@@ -1,11 +1,13 @@
 // GET /api/admin/reports?section=attendance|traffic|streaks|accuracy|inactive&from&to&group=day|week|month[&format=csv]
-import { requireRole, json } from "@/lib/guard";
+import { requireRole, requireUnlocked, json } from "@/lib/guard";
 import { csvResponse } from "@/lib/csv";
 import { ReportInputError, SECTIONS, buildReport, parseGroup, parseRange, type Section } from "@/services/report-service";
 
 export async function GET(req: Request) {
   const auth = await requireRole(req, "admin");
   if (auth.error) return auth.error;
+  const locked = await requireUnlocked(auth.session);
+  if (locked) return locked;
   const sp = new URL(req.url).searchParams;
   const section = sp.get("section") as Section;
   if (!SECTIONS.includes(section)) return json({ error: "Unknown report." }, 400);

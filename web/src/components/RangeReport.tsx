@@ -2,9 +2,9 @@
 import { Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { DataTable } from "./DataTable";
-import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ExportButton } from "./ExportButton";
 import { TableSkeleton } from "./skeletons";
 import { peek, put } from "@/lib/client-cache";
 
@@ -81,7 +81,7 @@ export function RangeReport({
             <Input className="h-9 w-56 pl-9" placeholder="Search member..." value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search member" />
           </div>
         )}
-        <a href={`${endpoint}?${params(true)}`} className={buttonVariants({ variant: "outline", className: "ml-auto bg-card" })}>Export CSV</a>
+        <ExportButton href={`${endpoint}?${params(true)}`} className="ml-auto bg-card" />
       </div>
       {error && <p role="alert" className="mb-3 text-sm text-bad">{error}</p>}
       {table ? <DataTable headers={table.headers} rows={table.rows} /> : !error && <TableSkeleton rows={4} />}

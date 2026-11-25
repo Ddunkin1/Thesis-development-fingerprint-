@@ -51,7 +51,7 @@ export const bridge = {
     }),
   /** Waits for one scan; status is "matched" | "no_match" | "timeout". */
   identify: () =>
-    call<{ status: "matched" | "no_match" | "timeout"; userId: number | null; score: number | null }>("/identify", { method: "POST" }),
+    call<{ status: "matched" | "no_match" | "timeout"; userId: number | null; score: number | null; proof?: string | null }>("/identify", { method: "POST" }),
   /** Ask the bridge to re-download templates now (call after saving an enrollment). */
   sync: () => call<{ templatesLoaded: number }>("/sync", { method: "POST" }),
   cancel: () => call<object>("/cancel", { method: "POST" }),

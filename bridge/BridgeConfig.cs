@@ -9,7 +9,7 @@ public sealed class BridgeConfig
     public int Port { get; init; } = 5055;
     public string WebAppUrl { get; init; } = "http://localhost:3000";
     public string[] AllowedOrigins { get; init; } = { "http://localhost:3000" };
-    public int SyncMinutes { get; init; } = 3;
+    public int SyncMinutes { get; init; } = 15;   // longer than the database's 5-minute idle sleep; changes made on this PC sync at once
     public string ApiKey { get; init; } = "";
 
     public static BridgeConfig From(IConfiguration c)
@@ -29,7 +29,7 @@ public sealed class BridgeConfig
             Port = s.GetValue("Port", 5055),
             WebAppUrl = (s["WebAppUrl"] ?? "http://localhost:3000").TrimEnd('/'),
             AllowedOrigins = origins.Select(o => o.TrimEnd('/')).ToArray(),
-            SyncMinutes = Math.Max(1, s.GetValue("SyncMinutes", 3)),
+            SyncMinutes = Math.Max(1, s.GetValue("SyncMinutes", 15)),
             ApiKey = key!,
         };
     }

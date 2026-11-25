@@ -21,8 +21,11 @@ export async function findForDay(userId: number, day: string, q: Q = query): Pro
 }
 
 /** Inserts a check-in; returns false if the one-per-day unique index already has one (duplicate). */
-export async function insertCheckIn(userId: number, q: Q = query): Promise<boolean> {
-  const rows = await q("INSERT INTO attendance (user_id) VALUES ($1) ON CONFLICT DO NOTHING RETURNING id", [userId]);
+export async function insertCheckIn(userId: number, q: Q = query, manual?: { reason: string; by: number }): Promise<boolean> {
+  const rows = await q(
+    "INSERT INTO attendance (user_id, method, manual_reason, recorded_by) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING RETURNING id",
+    [userId, manual ? "manual" : "fingerprint", manual?.reason ?? null, manual?.by ?? null],
+  );
   return rows.length > 0;
 }
 
@@ -30,8 +33,13 @@ export async function setCheckOut(id: string, q: Q = query) {
   await q("UPDATE attendance SET check_out = now() WHERE id = $1 AND check_out IS NULL", [id]);
 }
 
-export async function logScan(success: boolean, matchedUserId: number | null, q: Q = query) {
-  await q("INSERT INTO scan_log (success, matched_user_id) VALUES ($1, $2)", [success, matchedUserId]);
+/** Logs one scanner result. Returns false if this signed result (nonce) was already used. */
+export async function logScan(success: boolean, matchedUserId: number | null, nonce: string, q: Q = query): Promise<boolean> {
+  const rows = await q(
+    "INSERT INTO scan_log (success, matched_user_id, nonce) VALUES ($1, $2, $3) ON CONFLICT (nonce) DO NOTHING RETURNING id",
+    [success, matchedUserId, nonce],
+  );
+  return rows.length > 0;
 }
 
 /** Every distinct Manila day this member attended, oldest first. */

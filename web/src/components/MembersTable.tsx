@@ -1,11 +1,15 @@
 "use client";
-import { Fingerprint, Flame, KeyRound, MoreHorizontal, Pencil, Search, Trash2 } from "lucide-react";
+import { ClipboardPen, Fingerprint, Flame, KeyRound, MoreHorizontal, Pencil, Search, ShieldOff, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { StreakView } from "@/services/streak-service";
 import { bridge } from "@/lib/bridge-client";
+import { CONSENT_TEXT } from "@/lib/consent";
+import { PIN_HEADER } from "@/lib/pin-client";
+import { ExportButton } from "./ExportButton";
+import { PinField } from "./PinField";
 import { useMembershipPrice } from "@/lib/use-membership-price";
 import { BadgeIcon } from "./BadgeIcon";
 import { BridgeBanner } from "./BridgeBanner";
@@ -27,12 +31,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 
 interface Member {
   id: number; fullName: string; username: string; expiryDate: string | null; daysLeft: number | null;
-  status: "active" | "expiring" | "expired" | "none"; fingers: number; streak: number; paid: number; joinedOn: string;
+  status: "active" | "expiring" | "expired" | "none"; fingers: number; streak: number; paid: number; joinedOn: string; consent: boolean;
 }
 type Dialogs =
-  | { kind: "renew" | "edit" | "reenroll" | "reset" | "delete" | "streak"; m: Member }
+  | { kind: "renew" | "edit" | "reenroll" | "reset" | "delete" | "streak" | "manual" | "withdraw"; m: Member }
   | { kind: "info"; title: string; text: string }
   | null;
+
+const MANUAL_REASONS = ["Finger is wet", "Finger is injured", "Finger not readable", "Scanner problem"];
 
 type Filter = "all" | "active" | "expiring" | "expired";
 type Sort = "expiry" | "name" | "streak";
@@ -65,6 +71,8 @@ function MembersInner({ initialQ, initialFilter }: { initialQ: string; initialFi
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [streakView, setStreakView] = useState<StreakView | null>(null);
+  const [pin, setPin] = useState(""); // asked for important actions; the server checks it
+  const [consentAgain, setConsentAgain] = useState(false);
   const price = useMembershipPrice();
   const [refundOn, setRefundOn] = useState(false); // delete dialog: member backed out and got their money back
 
@@ -76,7 +84,7 @@ function MembersInner({ initialQ, initialFilter }: { initialQ: string; initialFi
   useEffect(() => { const t = setTimeout(load, 0); return () => clearTimeout(t); }, [load]);
 
   function open(d: Dialogs, initial = "") {
-    setDialog(d); setValue(initial); setTemplate(null); setError(""); setRefundOn(false);
+    setDialog(d); setValue(initial); setTemplate(null); setError(""); setRefundOn(false); setConsentAgain(false); setPin("");
     if (d?.kind === "streak") {
       setStreakView(null);
       fetch(`/api/admin/members/${d.m.id}/streak`).then((r) => r.json()).then(setStreakView);
@@ -87,10 +95,10 @@ function MembersInner({ initialQ, initialFilter }: { initialQ: string; initialFi
   /** Sends a request, refreshes the list, and (for fingerprint changes) tells the bridge to re-download templates. */
   async function act(url: string, method: string, body?: unknown, after?: (data: Record<string, string>) => void, resync = false) {
     setBusy(true); setError("");
-    const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: body ? JSON.stringify(body) : undefined });
+    const res = await fetch(url, { method, headers: { "Content-Type": "application/json", ...(pin ? { [PIN_HEADER]: pin } : {}) }, body: body ? JSON.stringify(body) : undefined });
     const data = await res.json().catch(() => ({}));
     setBusy(false);
-    if (!res.ok) { setError(data.error ?? "Something went wrong."); return; }
+    if (!res.ok) { setError(data.error ?? "Something went wrong."); if (String(data.code ?? "").startsWith("pin_")) setPin(""); return; }
     if (resync) bridge.sync();
     await load();
     if (after) after(data); else setDialog(null);
@@ -121,7 +129,7 @@ function MembersInner({ initialQ, initialFilter }: { initialQ: string; initialFi
   return (
     <div className="min-w-0">
       <PageHeader title="Members" description="Renew, edit, re-enroll fingerprints and check streaks.">
-        <Link href="/api/admin/members?format=csv" prefetch={false} download className={buttonVariants({ variant: "outline", className: "bg-card" })}>Export CSV</Link>
+        <ExportButton href="/api/admin/members?format=csv" className="bg-card" />
         <Link href="/admin/register" className={buttonVariants({ })}>New member</Link>
       </PageHeader>
 
@@ -165,11 +173,11 @@ function MembersInner({ initialQ, initialFilter }: { initialQ: string; initialFi
       </section>
 
       <div className="overflow-hidden rounded-lg border bg-card">
-        <Table>
+        <Table className="[&_td]:px-2 [&_th]:px-2 [&_td:first-child]:pl-4 [&_th:first-child]:pl-4">
           <TableHeader className="bg-muted">
             <TableRow>
               <TableHead>Member</TableHead><TableHead>Status</TableHead><TableHead className="hidden sm:table-cell">Expires</TableHead>
-              <TableHead className="hidden md:table-cell">Streak</TableHead><TableHead className="hidden md:table-cell">Prints</TableHead><TableHead className="w-0" />
+              <TableHead className="hidden xl:table-cell">Streak</TableHead><TableHead className="hidden md:table-cell">Prints</TableHead><TableHead className="w-0" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -184,7 +192,7 @@ function MembersInner({ initialQ, initialFilter }: { initialQ: string; initialFi
                     </span>
                     <div className="min-w-0">
                       <div className="truncate font-semibold">{r.fullName}</div>
-                      <div className="truncate text-[0.8125rem] text-muted-foreground">@{r.username} · Joined {r.joinedOn}</div>
+                      <div className="max-w-52 truncate text-[0.8125rem] text-muted-foreground xl:max-w-none">@{r.username} · Joined {r.joinedOn}</div>
                     </div>
                   </div>
                 </TableCell>
@@ -195,24 +203,26 @@ function MembersInner({ initialQ, initialFilter }: { initialQ: string; initialFi
                   <div className="font-semibold tabular-nums">{r.expiryDate ?? "-"}</div>
                   {r.daysLeft !== null && r.daysLeft >= 0 && <div className="mt-0.5 text-[0.8125rem] text-muted-foreground">{r.daysLeft} day{r.daysLeft === 1 ? "" : "s"} left</div>}
                 </TableCell>
-                <TableCell className="hidden md:table-cell">
+                <TableCell className="hidden xl:table-cell">
                   <span className="numeral text-2xl">{r.streak}</span> <span className="text-[0.8125rem] text-muted-foreground">day{r.streak === 1 ? "" : "s"}</span>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
                   {r.fingers > 0
                     ? <span className="inline-flex rounded-md bg-ok-soft px-2.5 py-1 text-[0.8125rem] font-semibold text-ok">{r.fingers} enrolled</span>
-                    : <span className="inline-flex rounded-md bg-bad-soft px-2.5 py-1 text-[0.8125rem] font-semibold text-bad">None enrolled</span>}
+                    : <span className="inline-flex rounded-md bg-bad-soft px-2.5 py-1 text-[0.8125rem] font-semibold text-bad">{r.consent ? "None enrolled" : "Consent withdrawn"}</span>}
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center justify-end gap-1.5">
                     <Button size="sm" onClick={() => open({ kind: "renew", m: r })}>Renew</Button>
                     <DropdownMenu>
                       <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label={`More actions for ${r.fullName}`} />}><MoreHorizontal /></DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
+                      <DropdownMenuContent align="end" className="min-w-56">
+                        <DropdownMenuItem onClick={() => open({ kind: "manual", m: r })}><ClipboardPen /> Manual check-in or out</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => open({ kind: "streak", m: r })}><Flame /> View streak</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => open({ kind: "edit", m: r }, r.fullName)}><Pencil /> Edit name</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => open({ kind: "reenroll", m: r })}><Fingerprint /> Re-enroll fingerprint</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => open({ kind: "reset", m: r })}><KeyRound /> Reset password</DropdownMenuItem>
+                        {r.fingers > 0 && <DropdownMenuItem onClick={() => open({ kind: "withdraw", m: r })}><ShieldOff /> Remove fingerprints</DropdownMenuItem>}
                         <DropdownMenuSeparator />
                         <DropdownMenuItem variant="destructive" onClick={() => open({ kind: "delete", m: r }, String(r.paid))}><Trash2 /> Delete</DropdownMenuItem>
                       </DropdownMenuContent>
@@ -238,9 +248,10 @@ function MembersInner({ initialQ, initialFilter }: { initialQ: string; initialFi
                 <div className="text-sm text-muted-foreground">Membership fee, 30 days</div>
                 <div className="numeral text-4xl"><span className="mr-1.5 align-top font-sans text-lg font-medium text-muted-foreground">₱</span>{price ?? "…"}</div>
               </div>
+              <PinField value={pin} onChange={setPin} autoFocus />
               {error && <p className="text-sm text-bad">{error}</p>}
               <DialogFooter>
-                <Button disabled={busy || price === null} onClick={() => act(`/api/admin/members/${m.id}/renew`, "POST", undefined,
+                <Button disabled={busy || price === null || pin.length !== 4} onClick={() => act(`/api/admin/members/${m.id}/renew`, "POST", undefined,
                   (d) => { setDialog(null); toast.success(`Renewed - new expiry ${d.expiryDate}`); })}>
                   {busy ? "Saving..." : price !== null ? `Collect ₱${price} and renew` : "Renew membership"}
                 </Button>
@@ -260,11 +271,59 @@ function MembersInner({ initialQ, initialFilter }: { initialQ: string; initialFi
           {dialog?.kind === "reenroll" && m && (
             <>
               <DialogHeader><DialogTitle>Re-enroll {m.fullName}</DialogTitle><DialogDescription>Replaces the primary fingerprint. The new scan is only saved when you press Save.</DialogDescription></DialogHeader>
-              <FingerEnroll label="Primary finger" template={template} onTemplate={setTemplate} userId={m.id} />
+              {!m.consent && (
+                <div className="flex items-start gap-3 rounded-md border bg-muted p-3">
+                  <Checkbox id="consent-again" checked={consentAgain} onCheckedChange={(v) => setConsentAgain(v === true)} className="mt-0.5" />
+                  <Label htmlFor="consent-again" className="block text-sm font-normal leading-relaxed"><b className="font-semibold">They withdrew consent earlier. New consent:</b> {CONSENT_TEXT}</Label>
+                </div>
+              )}
+              <FingerEnroll label="Primary finger" template={template} onTemplate={setTemplate} userId={m.id} disabled={!m.consent && !consentAgain} />
+              <PinField value={pin} onChange={setPin} />
               {error && <p className="text-sm text-bad">{error}</p>}
               <DialogFooter>
-                <Button disabled={busy || !template} onClick={() => act(`/api/admin/members/${m.id}/fingerprint`, "PUT", { fingerIndex: 0, template },
+                <Button disabled={busy || !template || (!m.consent && !consentAgain) || pin.length !== 4} onClick={() => act(`/api/admin/members/${m.id}/fingerprint`, "PUT", { fingerIndex: 0, template, consent: consentAgain },
                   () => { setDialog(null); toast.success("Fingerprint updated - the scanner uses it right away"); }, true)}>Save fingerprint</Button>
+              </DialogFooter>
+            </>
+          )}
+
+          {dialog?.kind === "manual" && m && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Manual check-in or out</DialogTitle>
+                <DialogDescription>Use this only when {m.fullName}&apos;s finger cannot be read. It checks them in, or out if they are already in, and is saved as manual.</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-1.5">
+                <Label htmlFor="reason">Reason</Label>
+                <div className="flex flex-wrap gap-2 pb-1">
+                  {MANUAL_REASONS.map((t) => (
+                    <button key={t} type="button" aria-pressed={value === t} onClick={() => setValue(t)}
+                      className={`rounded-md border px-3 py-1.5 text-sm font-medium ${value === t ? "bg-primary text-primary-foreground" : "bg-muted hover:bg-accent"}`}>{t}</button>
+                  ))}
+                </div>
+                <Input id="reason" className="h-10" value={value} onChange={(e) => setValue(e.target.value)} maxLength={200} placeholder="Or type another reason" />
+              </div>
+              {error && <p role="alert" className="text-sm text-bad">{error}</p>}
+              <DialogFooter>
+                <Button disabled={busy || value.trim().length < 5} onClick={() => act(`/api/admin/members/${m.id}/manual-checkin`, "POST", { reason: value },
+                  (d) => { setDialog(null); toast.success(`${d.status === "checked_in" ? "Checked in" : "Checked out"}: ${m.fullName}, ${d.time}`); })}>
+                  {busy ? "Saving…" : "Record visit"}
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+
+          {dialog?.kind === "withdraw" && m && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Remove fingerprints</DialogTitle>
+                <DialogDescription>Use this when <b>{m.fullName}</b> withdraws consent. Their stored fingerprints are deleted. Membership and attendance records stay.</DialogDescription>
+              </DialogHeader>
+              <PinField value={pin} onChange={setPin} autoFocus />
+              {error && <p role="alert" className="text-sm text-bad">{error}</p>}
+              <DialogFooter>
+                <Button variant="destructive" disabled={busy || pin.length !== 4} onClick={() => act(`/api/admin/members/${m.id}/fingerprint`, "DELETE", undefined,
+                  () => { setDialog(null); toast.success("Fingerprints removed"); }, true)}>{busy ? "Removing…" : "Remove fingerprints"}</Button>
               </DialogFooter>
             </>
           )}
@@ -272,9 +331,10 @@ function MembersInner({ initialQ, initialFilter }: { initialQ: string; initialFi
           {dialog?.kind === "reset" && m && (
             <>
               <DialogHeader><DialogTitle>Reset password</DialogTitle><DialogDescription>Reset <b>{m.fullName}</b> to the default password? They will have to choose a new one at next login.</DialogDescription></DialogHeader>
+              <PinField value={pin} onChange={setPin} autoFocus />
               {error && <p className="text-sm text-bad">{error}</p>}
               <DialogFooter>
-                <Button disabled={busy} onClick={() => act(`/api/admin/members/${m.id}/reset-password`, "POST", undefined,
+                <Button disabled={busy || pin.length !== 4} onClick={() => act(`/api/admin/members/${m.id}/reset-password`, "POST", undefined,
                   (d) => setDialog({ kind: "info", title: "Password reset", text: `Username: ${d.username}\nDefault password: ${d.password}` }))}>Reset to default</Button>
               </DialogFooter>
             </>
@@ -308,9 +368,10 @@ function MembersInner({ initialQ, initialFilter }: { initialQ: string; initialFi
                   {refundOn ? "The original payments stay in the records (with the member's name) and a negative refund entry is added." : "Without a refund, their payments stay counted as sales."}
                 </p>
               </div>
+              <PinField value={pin} onChange={setPin} />
               {error && <p className="text-sm text-bad">{error}</p>}
               <DialogFooter>
-                <Button variant="destructive" disabled={busy || (refundOn && !(Number(value) > 0 && Number(value) <= m.paid))}
+                <Button variant="destructive" disabled={busy || pin.length !== 4 || (refundOn && !(Number(value) > 0 && Number(value) <= m.paid))}
                   onClick={() => act(`/api/admin/members/${m.id}`, "DELETE", { refund: refundOn ? Number(value) : 0 }, () => { setDialog(null); toast.success(refundOn ? `Member deleted, ₱${value} refund recorded` : "Member deleted"); }, true)}>
                   {refundOn ? "Delete and record refund" : "Delete permanently"}
                 </Button>

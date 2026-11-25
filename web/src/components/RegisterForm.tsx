@@ -1,5 +1,6 @@
 "use client";
 import { Copy } from "lucide-react";
+import { CONSENT_TEXT } from "@/lib/consent";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -194,8 +195,7 @@ export function RegisterForm() {
               <div className="mt-5 flex items-start gap-3 rounded-lg border bg-muted p-4">
                 <Checkbox id="consent" checked={consent} onCheckedChange={(v) => setConsent(v === true)} className="mt-0.5" />
                 <Label htmlFor="consent" className="block text-sm font-normal leading-relaxed">
-                  <b className="font-semibold">Data privacy consent (RA 10173).</b> The member agrees that Chaq Gym may collect their name and a fingerprint
-                  <i> template</i> (a numeric code, never the fingerprint image) to record attendance. They can ask to have it deleted at any time.
+                  <b className="font-semibold">Data privacy consent (RA 10173).</b> {CONSENT_TEXT}
                 </Label>
               </div>
             </section>

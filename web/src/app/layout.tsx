@@ -13,6 +13,8 @@ const display = Barlow_Condensed({ variable: "--font-display", subsets: ["latin"
 export const metadata: Metadata = {
   title: "CHAQ GYM Attendance",
   description: "Gamified fingerprint attendance for Chaq Gym",
+  icons: { apple: "/icons/apple-touch-icon.png" },
+  appleWebApp: { capable: true, title: "Chaq Gym" },
 };
 export const viewport: Viewport = {
   viewportFit: "cover", // use the whole phone screen, including behind the notch (the member tab bar adds safe-area padding)

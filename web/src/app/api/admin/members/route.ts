@@ -2,9 +2,10 @@
 //   GET  ?q=search[&format=csv] -> list members with their membership status (or download them as CSV)
 //   POST {fullName, consent, fingers[], walkinId?} (the fee is fixed on the server) -> register a monthly member (admin only)
 import { z } from "zod";
-import { requireRole, json } from "@/lib/guard";
+import { requireRole, requireUnlocked, json } from "@/lib/guard";
 import { csvResponse } from "@/lib/csv";
 import { RegistrationError, registerMonthlyMember } from "@/services/registration-service";
+import { record } from "@/services/audit-service";
 import { listMembers } from "@/services/member-service";
 
 export async function GET(req: Request) {
@@ -13,6 +14,9 @@ export async function GET(req: Request) {
   const sp = new URL(req.url).searchParams;
   const members = await listMembers((sp.get("q") ?? "").slice(0, 100));
   if (sp.get("format") === "csv") {
+    const locked = await requireUnlocked(auth.session);
+    if (locked) return locked;
+    await record(auth.session, "member.export", `${members.length} member(s)`);
     return csvResponse("members.csv", ["Name", "Username", "Status", "Expires", "Days left", "Current streak", "Fingerprints", "Joined"],
       members.map((m) => [m.fullName, m.username, m.status, m.expiryDate ?? "", m.daysLeft ?? "", m.streak, m.fingers, m.joinedOn]));
   }
@@ -42,6 +46,7 @@ export async function POST(req: Request) {
       walkinId,
       fingers: fingers.map((f) => ({ fingerIndex: f.fingerIndex, template: Buffer.from(f.template, "base64") })),
     });
+    await record(auth.session, "member.register", result.username, `${fingers.length} fingerprint(s), consent recorded`);
     return json({ ok: true, ...result }, 201);
   } catch (e) {
     if (e instanceof RegistrationError) return json({ error: e.message }, 400);

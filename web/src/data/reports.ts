@@ -92,8 +92,8 @@ export async function peakHours(from: string, to: string) {
 
 export async function attendanceHistory(from: string, to: string, search: string, limit = 2000) {
   const pattern = "%" + search.trim().replace(/[\\%_]/g, (c) => "\\" + c) + "%";
-  return query<{ day: string; full_name: string; username: string; check_in: Date; check_out: Date | null }>(
-    `SELECT ${dayOf("a.check_in")} AS day, u.full_name, u.username, a.check_in, a.check_out
+  return query<{ day: string; full_name: string; username: string; check_in: Date; check_out: Date | null; method: string; manual_reason: string | null }>(
+    `SELECT ${dayOf("a.check_in")} AS day, u.full_name, u.username, a.check_in, a.check_out, a.method, a.manual_reason
        FROM attendance a JOIN users u ON u.id = a.user_id
       WHERE ${dayOf("a.check_in")} BETWEEN $1::date AND $2::date
         AND ($3 = '' OR u.full_name ILIKE $4 OR u.username ILIKE $4)

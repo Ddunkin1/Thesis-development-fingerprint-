@@ -4,6 +4,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { BadgeIcon } from "@/components/BadgeIcon";
 import { LogoutButton } from "@/components/LogoutButton";
+import { PrivacyCard } from "@/components/member/PrivacyCard";
 import { MonthRecap } from "@/components/member/MonthRecap";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -94,6 +95,8 @@ export default function MePage() {
             </div>
             <Link href="/change-password" className="flex items-center gap-3 border-t p-4 font-medium"><KeyRound className="size-4 text-muted-foreground" /> Change password</Link>
           </section>
+
+          <PrivacyCard privacy={p.privacy} />
 
           <div className="flex justify-center"><LogoutButton /></div>
         </>

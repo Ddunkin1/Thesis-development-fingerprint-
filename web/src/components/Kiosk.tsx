@@ -8,13 +8,14 @@ import { MILESTONES, type BadgeDef } from "@/lib/badges";
 import type { StreakView } from "@/services/streak-service";
 import { BadgeIcon } from "./BadgeIcon";
 import { BridgeBanner } from "./BridgeBanner";
+import { lockFigures } from "@/lib/pin-client";
 import { Brand } from "./Brand";
 import { ThemeToggle } from "./ThemeToggle";
 import { WeekTiles } from "./WeekTiles";
 
 type Outcome =
   | { status: "no_match" | "not_found" }
-  | { status: "session_expired" | "server_error" }
+  | { status: "session_expired" | "server_error" | "outdated_bridge" | "clock" }
   | { status: "expired"; name: string; expiryDate: string }
   | { status: "checked_in" | "checked_out" | "already"; name: string; time: string; daysLeft: number; expiringSoon: boolean; message?: string; streak: StreakView; newBadges: BadgeDef[] };
 
@@ -39,6 +40,9 @@ export function Kiosk() {
     return () => { clearTimeout(first); clearInterval(t); };
   }, []);
 
+  // Members stand at this screen: hide income and reports again as soon as it opens.
+  useEffect(() => { lockFigures(); }, []);
+
   useEffect(() => {
     alive.current = true;
     (async () => {
@@ -47,13 +51,16 @@ export function Kiosk() {
         if (!alive.current) break;
         if (!r.ok) { await sleep(2000); continue; }   // bridge off / scanner unplugged: the banner explains, keep retrying
         if (r.status === "timeout") continue;
-        const res = await fetch("/api/admin/kiosk/scan", {
+        // an older fingerprint program does not sign its results: the server would refuse them
+        if (!r.proof) { setResult({ status: "outdated_bridge" }); await sleep(SHOW_MS); setResult(null); continue; }
+        const res = await fetch("/api/kiosk/scan", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: r.status === "matched" ? r.userId : null }),
+          body: JSON.stringify({ proof: r.proof }),
         }).catch(() => null);
-        // The login cookie lasts 8 hours. If it ran out, say so (do NOT show "not recognized" for a valid finger).
+        // The front-desk sign-in lasts 30 days and renews while it is used. If it ran out, say so (do NOT show "not recognized" for a valid finger).
         if (res && (res.status === 401 || res.status === 403)) { setResult({ status: "session_expired" }); return; } // stop scanning until signed in again
-        setResult(res?.ok ? await res.json() : { status: "server_error" });
+        const body = res ? await res.json().catch(() => null) : null;
+        setResult(res?.ok && body ? body : { status: body?.reason === "expired" ? "clock" : "server_error" });
         await sleep(SHOW_MS);
         setResult(null);
       }
@@ -66,7 +73,7 @@ export function Kiosk() {
     : result.status === "checked_out" ? "bg-[#2a241d]"
     : result.status === "already" ? "bg-[#4a3203]"
     : result.status === "expired" ? "bg-[#7f1d1d]"
-    : result.status === "session_expired" || result.status === "server_error" ? "bg-[#3b2a06]"
+    : result.status === "session_expired" || result.status === "server_error" || result.status === "outdated_bridge" || result.status === "clock" ? "bg-[#3b2a06]"
     : "bg-[#2a241d]";
 
   const time = now ? new Intl.DateTimeFormat("en-PH", { timeZone: "Asia/Manila", hour: "numeric", minute: "2-digit", hour12: true }).format(now) : "";
@@ -75,7 +82,7 @@ export function Kiosk() {
   return (
     <main className={`relative flex min-h-screen flex-col ${bg} ${result || offline ? "text-white" : ""} p-6 transition-colors duration-300 md:p-10`}>
       <div className={`flex items-center justify-between ${result || offline ? "text-white/60 [&_a:hover]:text-white [&_button:hover]:text-white" : "text-muted-foreground [&_a:hover]:text-foreground [&_button:hover]:text-foreground"}`}>
-        <Link href="/admin" className="flex items-center gap-2 text-sm"><ArrowLeft className="size-4" /> Admin</Link>
+        <Link href="/admin" className="flex items-center gap-2 rounded-md p-2 text-sm"><ArrowLeft className="size-4" /> Admin</Link>
         <div className="flex items-center gap-2">
           {!result && !offline && <ThemeToggle compact />}
           <button aria-label="Toggle fullscreen" onClick={() => (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen())}
@@ -140,6 +147,18 @@ export function Kiosk() {
             <ShieldAlert className="size-[12vw] text-warn md:size-[7vw]" />
             <div className="font-display mt-4 text-[12vw] font-extrabold uppercase leading-[0.9] md:text-[8vw]">Please try again</div>
             <div className="mt-4 text-[5vw] text-white/80 md:text-[2.4vw]">The scan could not be recorded. Scan your finger once more.</div>
+          </div>
+        )}
+
+        {(result?.status === "outdated_bridge" || result?.status === "clock") && (
+          <div className="slide-up">
+            <ShieldAlert className="size-[12vw] text-warn md:size-[7vw]" />
+            <div className="font-display mt-4 text-[10vw] font-extrabold uppercase leading-[0.9] md:text-[6vw]">
+              {result.status === "clock" ? "Check this PC's clock" : "Update the fingerprint program"}
+            </div>
+            <div className="mt-4 text-[5vw] text-white/80 md:text-[2.4vw]">
+              {result.status === "clock" ? "Set the date and time to automatic, then scan again." : "Staff: close ChaqBridge and start the new version."}
+            </div>
           </div>
         )}
 

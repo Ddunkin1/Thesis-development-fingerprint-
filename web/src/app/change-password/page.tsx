@@ -1,6 +1,7 @@
 "use client";
 import { ArrowRight, Lock } from "lucide-react";
 import { useState } from "react";
+import { homeOf } from "@/lib/roles";
 import { AuthFrame } from "@/components/AuthFrame";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +24,7 @@ export default function ChangePasswordPage() {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) { setError(data.error ?? "Could not change password."); setBusy(false); return; }
-    window.location.href = data.role === "admin" ? "/admin" : "/member";
+    window.location.href = homeOf(data.role);
   }
 
   const field = (id: string, label: string) => (

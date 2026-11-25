@@ -7,6 +7,7 @@ import * as members from "@/data/members";
 import * as users from "@/data/users";
 import * as fingerprints from "@/data/fingerprints";
 import * as payments from "@/data/payments";
+import { CONSENT_VERSION } from "@/lib/consent";
 import { MEMBERSHIP_PRICE } from "@/lib/pricing";
 import { daysLeft, renewedExpiry, statusOf, type MembershipStatus } from "./membership-rules";
 
@@ -22,6 +23,7 @@ export interface MemberView {
   streak: number;
   paid: number; // net money paid (payments minus refunds)
   joinedOn: string; // "Nov 25, 2026"
+  consent: boolean; // false once consent has been withdrawn
 }
 
 export class MemberError extends Error {}
@@ -40,6 +42,7 @@ export async function listMembers(search: string): Promise<MemberView[]> {
     fingers: Number(r.fingers),
     streak: r.streak,
     paid: Number(r.paid),
+    consent: r.consent_given,
     joinedOn: new Intl.DateTimeFormat("en-PH", { timeZone: "Asia/Manila", month: "short", day: "numeric", year: "numeric" }).format(new Date(r.created_at)),
   }));
 }
@@ -80,7 +83,7 @@ export async function resetPassword(userId: number) {
  * member's name). Without a refund the sales are kept as they were.
  */
 export async function removeMember(userId: number, refund = 0) {
-  await withTx(async (q) => {
+  return withTx(async (q) => {
     const m = await members.findMember(userId, q);
     if (!m) throw new MemberError("Member not found.");
     const paid = await payments.netPaidBy(userId, q);
@@ -90,12 +93,33 @@ export async function removeMember(userId: number, refund = 0) {
       await payments.insertPayment({ type: "monthly", amount: -refund, note: `REFUND - ${m.full_name} (${m.username}) cancelled membership` }, q);
     }
     await members.deleteMember(userId, q);
+    return { fullName: m.full_name, username: m.username };
   });
 }
 
-export async function saveFingerprint(userId: number, fingerIndex: number, template: Buffer) {
-  if (!(await members.findMember(userId))) throw new MemberError("Member not found.");
-  await fingerprints.upsertTemplate(userId, fingerIndex, template);
+export async function saveFingerprint(userId: number, fingerIndex: number, template: Buffer, newConsent = false) {
+  await withTx(async (q) => {
+    const m = await members.findMember(userId, q);
+    if (!m) throw new MemberError("Member not found.");
+    if (!m.consent_given) {
+      // They withdrew earlier: a fingerprint may only be stored again after they agree again.
+      if (!newConsent) throw new MemberError("This member withdrew consent. Ask for consent again before enrolling.");
+      await users.recordConsent(userId, CONSENT_VERSION, q);
+    }
+    await fingerprints.upsertTemplate(userId, fingerIndex, template, q);
+  });
+  return members.findMember(userId);
+}
+
+/** Consent withdrawn: the stored fingerprints are deleted; the membership and attendance records stay. */
+export async function withdrawFingerprints(userId: number) {
+  return withTx(async (q) => {
+    const m = await members.findMember(userId, q);
+    if (!m) throw new MemberError("Member not found.");
+    const removed = await fingerprints.deleteTemplatesOf(userId, q);
+    await users.recordConsentWithdrawal(userId, q);
+    return { removed, fullName: m.full_name, username: m.username };
+  });
 }
 
 export async function listRecentWalkins() {

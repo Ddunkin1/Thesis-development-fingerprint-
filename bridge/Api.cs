@@ -84,7 +84,9 @@ public static class Api
             return await Guard(async () =>
             {
                 var r = await scanner.IdentifyAsync(10_000, ctx.RequestAborted);
-                return Results.Json(new { ok = true, status = r.Status, userId = r.UserId, score = r.Score, fingerIndex = r.FingerIndex });
+                // proof = the signed form of this result; the web server trusts only that
+                var proof = ScanProof.Create(cfg.ApiKey, r.Status, r.UserId);
+                return Results.Json(new { ok = true, status = r.Status, userId = r.UserId, score = r.Score, fingerIndex = r.FingerIndex, proof });
             });
         });
 

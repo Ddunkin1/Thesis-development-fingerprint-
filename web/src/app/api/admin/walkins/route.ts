@@ -3,6 +3,7 @@
 //   POST -> log a one-session walk-in (name + fee). No account, no fingerprint.
 import { z } from "zod";
 import { requireRole, json } from "@/lib/guard";
+import { record } from "@/services/audit-service";
 import { registerWalkin } from "@/services/registration-service";
 import { listRecentWalkins } from "@/services/member-service";
 
@@ -21,6 +22,7 @@ export async function POST(req: Request) {
   if (!parsed.success) return json({ error: "Enter the visitor name and the amount paid." }, 400);
   try {
     const r = await registerWalkin({ fullName: parsed.data.fullName.replace(/\s+/g, " "), amount: parsed.data.amount });
+    await record(auth.session, "walkin.log", parsed.data.fullName, `Paid ${parsed.data.amount}`);
     return json({ ok: true, ...r }, 201);
   } catch (e) {
     console.error("registerWalkin failed:", (e as Error).message);

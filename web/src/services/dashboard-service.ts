@@ -7,7 +7,8 @@ const timeOf = (d: Date) => new Intl.DateTimeFormat("en-PH", { timeZone: MANILA_
 const dayOf = (d: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: MANILA_TZ }).format(d); // 'YYYY-MM-DD'
 const dayLabel = (d: Date) => new Intl.DateTimeFormat("en-PH", { timeZone: MANILA_TZ, month: "short", day: "numeric" }).format(d);
 
-export async function getDashboard() {
+/** `withMoney` is false until the PIN is typed: income figures are then not even sent to the browser. */
+export async function getDashboard(withMoney: boolean) {
   const today = todayManila();
   const monthStart = today.slice(0, 8) + "01";
   const yesterday = addDays(today, -1);
@@ -35,9 +36,9 @@ export async function getDashboard() {
     checkinsToday,
     stillInGym: stillIn,                       // checked in today and not checked out yet
     walkinsToday,
-    incomeToday,
-    incomeMonth,
-    incomeYesterday,
+    incomeToday: withMoney ? incomeToday : null,
+    incomeMonth: withMoney ? incomeMonth : null,
+    incomeYesterday: withMoney ? incomeYesterday : null,
     peakHourToday: todayPeak ? hourText(todayPeak.h) : null,
     // the live feed: newest visits first, today's flagged so the screen can group them
     feed: recent.map((a) => ({

@@ -29,8 +29,8 @@ const peso = (n: number) => Math.round(n * 100) / 100;
 export async function attendanceHistory(from: string, to: string, search: string): Promise<Table> {
   const rows = await r.attendanceHistory(from, to, search);
   return {
-    headers: ["Date", "Member", "Username", "Check-in", "Check-out", "Minutes"],
-    rows: rows.map((a) => [a.day, a.full_name, a.username, time(a.check_in), a.check_out ? time(a.check_out) : "", minutes(a.check_in, a.check_out)]),
+    headers: ["Date", "Member", "Username", "Check-in", "Check-out", "Recorded by", "Minutes"],
+    rows: rows.map((a) => [a.day, a.full_name, a.username, time(a.check_in), a.check_out ? time(a.check_out) : "", a.method === "manual" ? `Manual: ${a.manual_reason ?? ""}` : "Fingerprint", minutes(a.check_in, a.check_out)]),
   };
 }
 

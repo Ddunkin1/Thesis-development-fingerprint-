@@ -1,6 +1,7 @@
 "use client";
 import { ArrowRight, Eye, EyeOff, Lock, UserRound } from "lucide-react";
 import { useState } from "react";
+import { homeOf } from "@/lib/roles";
 import { AuthFrame } from "@/components/AuthFrame";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,11 +29,11 @@ export default function LoginPage() {
       return;
     }
     // Full navigation so proxy.ts routes by role (admin / member / forced password change).
-    window.location.href = data.mustChange ? "/change-password" : data.role === "admin" ? "/admin" : "/member";
+    window.location.href = data.mustChange ? "/change-password" : homeOf(data.role);
   }
 
   return (
-    <AuthFrame eyebrow="Admin and member access" title="Sign in" subtitle="Enter the username and password the gym gave you.">
+    <AuthFrame eyebrow="Front desk and member access" title="Sign in" subtitle="Enter the username and password the gym gave you.">
       <form onSubmit={onSubmit} className="space-y-5">
         <div className="space-y-2">
           <Label htmlFor="username" className="eyebrow !text-foreground">Username</Label>

@@ -10,6 +10,7 @@ export const env = {
   get databaseUrl() { return need("DATABASE_URL"); },
   get sessionSecret() { return need("SESSION_SECRET"); },
   get bridgeApiKey() { return need("BRIDGE_API_KEY"); },
+  get templateKey() { return need("TEMPLATE_ENCRYPTION_KEY"); },
   get timezone() { return process.env.APP_TIMEZONE || "Asia/Manila"; },
   get isProd() { return process.env.NODE_ENV === "production"; },
 };

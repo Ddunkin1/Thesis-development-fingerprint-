@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { authenticate } from "@/services/auth-service";
-import { SESSION_COOKIE, cookieOptions, signSession } from "@/lib/session";
+import { SESSION_COOKIE, cookieOptionsFor, signSession } from "@/lib/session";
 import { allow, reset } from "@/lib/rate-limit";
 
 const Body = z.object({ username: z.string().min(1).max(100), password: z.string().min(1).max(200) });
@@ -27,6 +27,6 @@ export async function POST(req: Request) {
   reset(userKey);
   reset(`login-user:${username.toLowerCase()}`);
   const res = NextResponse.json({ ok: true, role: session.role, mustChange: session.mustChange });
-  res.cookies.set(SESSION_COOKIE, await signSession(session), cookieOptions);
+  res.cookies.set(SESSION_COOKIE, await signSession(session), cookieOptionsFor(session.role));
   return res;
 }

@@ -7,6 +7,12 @@
     "build": "next build",
     "start": "next start -H 0.0.0.0",
     "lint": "eslint",
+    "test:security": "tsx --env-file-if-exists=.env.local scripts/e2e-security.ts",
+    "backup": "tsx --env-file-if-exists=.env.local scripts/backup.ts",
+    "restore": "tsx --env-file-if-exists=.env.local scripts/restore.ts",
+    "testdb": "tsx --env-file-if-exists=.env.local scripts/with-test-db.ts",
+    "key:templates": "tsx scripts/add-template-key.ts",
+    "encrypt:templates":"tsx --env-file-if-exists=.env.local scripts/encrypt-templates.ts",
     "migrate": "tsx --env-file-if-exists=.env.local scripts/migrate.ts",
     "seed:admin": "tsx --env-file-if-exists=.env.local scripts/seed-admin.ts",
     "reset:admin": "tsx --env-file-if-exists=.env.local scripts/seed-admin.ts --reset"

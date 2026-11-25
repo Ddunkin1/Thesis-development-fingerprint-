@@ -1,12 +1,12 @@
 "use client";
-import { BarChart3, CalendarClock, LayoutDashboard, Menu, Trophy, UserPlus, Users, type LucideIcon } from "lucide-react";
+import { BarChart3, CalendarClock, Hash, History, KeyRound, LayoutDashboard, Menu, Trophy, UserPlus, Users, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Brand } from "./Brand";
 import { LogoutButton } from "./LogoutButton";
 import { ScannerStatus } from "./ScannerStatus";
 import { ThemeToggle } from "./ThemeToggle";
-import { TopBar, initials } from "./admin/TopBar";
+import { TopBar } from "./admin/TopBar";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useApi } from "@/lib/use-api";
@@ -19,6 +19,8 @@ const LINKS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin/attendance", label: "Attendance", icon: CalendarClock },
   { href: "/admin/reports", label: "Reports", icon: BarChart3 },
   { href: "/admin/leaderboard", label: "Leaderboard", icon: Trophy },
+  { href: "/admin/activity", label: "Activity log", icon: History },
+  { href: "/admin/pin", label: "PIN", icon: Hash },
 ];
 
 /** Sidebar content (shared by the desktop sidebar and the phone slide-in menu). */
@@ -54,12 +56,13 @@ function SidebarBody({ name, onNavigate }: { name: string; onNavigate?: () => vo
       <div className="space-y-3">
         <ScannerStatus />
         <ThemeToggle block />
-        <div className="flex items-center gap-3 px-1 pt-1">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-accent text-sm font-bold text-brand">{initials(name)}</span>
+        <div className="flex items-center gap-1 px-1 pt-1">
           <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-semibold">{name || "Admin"}</div>
-            <div className="text-[0.75rem] text-muted-foreground">Administrator</div>
+            <div className="truncate text-sm font-semibold">{name || " "}</div>
+            <div className="text-[0.75rem] text-muted-foreground">Front desk</div>
           </div>
+          <Link href="/change-password" onClick={onNavigate} aria-label="Change password" title="Change password"
+            className="rounded-md p-2 text-muted-foreground hover:bg-card hover:text-foreground"><KeyRound className="size-4" /></Link>
           <LogoutButton iconOnly />
         </div>
       </div>

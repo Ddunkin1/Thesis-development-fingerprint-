@@ -19,8 +19,9 @@ development/
    (matches fingerprints locally, in memory)
 ```
 
-* The **browser** asks the bridge to enroll/identify a finger, then tells the web API what happened.
-* The **bridge** downloads all templates from the web app (on start and every 3 minutes) and matches locally.
+* The **browser** asks the bridge to enroll/identify a finger. The bridge **signs** each scan result, and the browser passes the signed
+  result to the web API, which refuses results that are changed, invented, older than 2 minutes or already used.
+* The **bridge** downloads all templates from the web app (on start, every 15 minutes, and right after changes made on the gym PC) and matches locally.
   It never touches the database. Only fingerprint *templates* are stored, never images.
 * The **web app** applies all rules (membership status, duplicate check-in, streaks, badges).
 
@@ -44,6 +45,7 @@ Put them in `web/.env.local` (never commit it; `.env*` is git-ignored). `web/.en
 | `ADMIN_USERNAME` / `ADMIN_PASSWORD` | credentials created by `npm run seed:admin` |
 | `BRIDGE_API_KEY` | secret shared with the bridge (long random string) |
 | `SESSION_SECRET` | signs the login cookie (32+ random bytes, hex) |
+| `TEMPLATE_ENCRYPTION_KEY` | 32 random bytes (base64) that encrypt stored fingerprint templates. Create with `npm run key:templates`. **Keep a private copy: if it is lost, everyone must be enrolled again.** Use the same value on the server that serves the same database. |
 | `MEMBERSHIP_PRICE` | fixed monthly fee in pesos, default `800` (registration and renewal always charge this; the server enforces it) |
 | `APP_TIMEZONE` | defaults to `Asia/Manila` |
 | `NEXT_PUBLIC_BRIDGE_URL` | where the *browser* finds the bridge, default `http://localhost:5055` |
@@ -61,12 +63,14 @@ npm install
 neon login                 # once, in a browser (or: npx neon@latest login)
 neon deploy                # writes DATABASE_URL etc. into .env.local
 npm run migrate            # creates the tables (uses the direct URL)
+npm run key:templates      # adds TEMPLATE_ENCRYPTION_KEY to .env.local if missing (never prints it)
+npm run encrypt:templates  # encrypts any template still stored as plain bytes (safe to re-run)
 npm run seed:admin         # creates the admin from ADMIN_USERNAME / ADMIN_PASSWORD (safe to re-run)
 npm run dev                # http://localhost:3000   (or: npm run build && npm start)
 ```
 
 * `npm run reset:admin` resets the admin password to the current `ADMIN_PASSWORD`.
-* Sign in at http://localhost:3000/login. The role decides what opens: admin → `/admin`, member → `/member` ("coming soon").
+* Sign in at http://localhost:3000/login. The role decides what opens: admin → `/admin`, member → `/member`.
 
 ### 2. Fingerprint Bridge (gym PC)
 
@@ -91,11 +95,53 @@ dotnet run -c Release
 Bridge API: `GET /status`, `GET /enroll/progress`, `POST /enroll`, `POST /identify`, `POST /sync`, `POST /cancel`.
 CORS only allows the origins in `AllowedOrigins`; other origins get 403.
 
+## Accounts and the PIN
+
+There are two kinds of account: **one front-desk admin** and **members** (who see only their own records).
+
+| Needs no PIN | Needs the 4-digit PIN |
+|---|---|
+| check-in, opening and leaving the kiosk (one tap) | delete a member |
+| register members and walk-ins, search, rename | renew a membership |
+| manual check-in (tap or type a reason) | change or remove a fingerprint |
+| attendance and leaderboard screens | reset a member's password |
+| | see income, reports, activity log; CSV exports |
+
+* **Create / change / recover the PIN:** menu → *PIN*. It always needs the admin password. Only a bcrypt hash is stored.
+* Actions ask for the PIN **every time**. Viewing (income, reports, log, exports) stays open for **5 minutes**; *Hide now*, *Hide income*,
+  signing out or opening the kiosk closes it at once.
+* 5 wrong PINs pause PIN entry for 15 minutes (counted in memory, so a server restart resets it). Check-in keeps working.
+* The front-desk sign-in lasts **30 days** and renews while used. Members' sign-in lasts 8 hours. Changing the password does not sign
+  out other devices; to do that, change `SESSION_SECRET` (signs everyone out).
+* **The kiosk is not locked.** This relies on an attended front desk: at an unattended computer the screens without a PIN are open.
+* **Forgot the admin password too:** run `npm run reset:admin` (needs the technical person). Keep a written copy locked away.
+* **Consent:** time and wording version are recorded. *Remove fingerprints* deletes the templates; enrolling again asks for new consent.
+* **Activity log:** important actions, PIN changes and wrong PINs. With one shared account it cannot show which person acted.
+
+## Backups and the test database
+
+```powershell
+cd web
+npm run backup                                  # all tables -> ..\..\backups\chaq-backup-<time>.json (outside git; keep private)
+npm run testdb -- npm run migrate               # create / update the separate "chaq_test" database
+npm run testdb -- npm run seed:admin
+npm run testdb -- npm run dev                   # run the app on test data (use it for the study's accuracy tests)
+# restore into an EMPTY, migrated database:
+$env:RESTORE_DATABASE_URL="<url of the empty database>"; npm run restore -- <backup file>
+```
+
+Security checks (59 checks, test database only): `npm run build`, then in one window `npm run testdb -- npx next start -p 3100`,
+and in another `npm run testdb -- npm run test:security`.
+
+A backup without `TEMPLATE_ENCRYPTION_KEY` cannot give the fingerprints back, so store the key separately from the backup files.
+
+While testing with the scanner on the test database, the bridge downloads templates from whichever app `WebAppUrl` points to.
+
 ### Using it
 
 1. **Register** (admin) → monthly member (full name, consent, 3-scan enrollment, optional backup finger; the fee is a fixed ₱800) or walk-in (amount entered).
    Username = lastname + `2026` (`cruz2026`, then `cruz2026a`…), default password = lastname + `Chaq`; the member must change it at first login.
-2. **Kiosk** (`/kiosk`) → fullscreen check-in screen; leave it open on the front-desk PC next to the bridge.
+2. **Kiosk** (`/kiosk`) → fullscreen check-in screen; tap *Admin* to go back. Leave it open on the front-desk PC next to the bridge.
 3. **Members / Attendance / Reports / Leaderboard / Dashboard** in the admin menu.
 4. **Member app** (`/member`, built phone-first): members sign in with their own account (default password changed on first login) and see
    - **Home:** a big streak number whose card gets hotter with the streak, this week's tiles, a **monthly goal ring** (12 visits a month,
@@ -107,7 +153,8 @@ CORS only allows the origins in `AllowedOrigins`; other origins get 403.
    - **10 badges** (`web/src/lib/badges.ts`): First Visit, 7-Day Fire, 30-Day Fire, 30 Visits, 100 Visits, Perfect Week, Weekend Warrior,
      Early Bird (before 7 AM), Night Owl (9 PM or later) and Comeback. They are awarded automatically at check-in.
    Everything is read from their own session (a member can never see another member's data), and the admin pages are closed to members.
-   It is ready to become an installable app (PWA) later: single column, tab bar, safe-area padding.
+   It can be added to a phone's home screen (needs HTTPS). There is no offline mode on purpose.
+   *Me → My data and privacy* explains what is stored and how to ask for deletion.
 5. **Theme:** Light / Dark / System switch at the bottom of the admin sidebar (also on the login page and the kiosk). It defaults to light and the choice is remembered per browser.
 
 ## Design
@@ -119,7 +166,7 @@ Only real data is shown: the design mock-ups' decorative numbers (momentum index
 were left out on purpose.
 
 **Your own logo:** save the gym's logo as `web/public/logo.png` (a square image works best). The sidebar, sign-in and member screens
-pick it up automatically; until then a simple "CG" monogram is shown. To change the brand colour, edit `--primary`, `--brand` and
+would pick it up once the logo component is used again (the monogram box was removed on request). To change the brand colour, edit `--primary`, `--brand` and
 `--brand-strong` in `web/src/app/globals.css`.
 
 The dashboard ("Today") is deliberately plain: one big number (who has checked in), a live list of who is in the gym, renewals due,
@@ -137,16 +184,20 @@ the scanner, and busy hours. The three member counts link to the members list al
 | Migrations | `web/db/migrations` | schema, applied by `npm run migrate` |
 | Bridge | `bridge/*.cs` | `ScannerService` (SDK calls), `SyncService`, `Api`, `StatusForm` |
 
-Security notes: bcrypt password hashes, signed httpOnly `SameSite=Lax` session cookie (8 h), login rate limit, role check on every admin API,
-origin check on state-changing requests, bridge key compared in constant time, RA 10173 consent before enrollment, templates only.
+Security notes: bcrypt password and PIN hashes, signed httpOnly `SameSite=Lax` session cookie, login and PIN rate limits, a role check on
+every protected API, origin check on state-changing requests, bridge key compared in constant time, signed single-use scan results,
+AES-256-GCM encryption of templates (tied to the member and finger), consent records, activity log, templates only.
+**Limits:** the encryption does not protect against someone who controls the running server; signed results do not protect against a stolen
+bridge key; fake-finger (spoof) resistance is not tested; there is no door or turnstile control.
 
-## Deploy to Railway (to do later)
+## Deploy to Railway (not done yet)
 
 1. Push the repo to GitHub (the `web` folder is the service root; set **Root Directory** to `web`).
 2. In Railway create a project → **Deploy from GitHub repo**. In the service **Settings**: Build command `npm run build`,
    Start command `npm run start`, **Pre-deploy command** `npm run migrate` (runs the migrations on every deploy).
 3. Under **Variables** set: `DATABASE_URL`, `DATABASE_URL_UNPOOLED` (from `neon connection-string`), `ADMIN_USERNAME`, `ADMIN_PASSWORD`,
-   `BRIDGE_API_KEY`, `SESSION_SECRET`, `APP_TIMEZONE=Asia/Manila`, `MEMBERSHIP_PRICE=800`. `PORT` is provided by Railway.
+   `BRIDGE_API_KEY`, `SESSION_SECRET`, `TEMPLATE_ENCRYPTION_KEY` (the same one that encrypted this database), `APP_TIMEZONE=Asia/Manila`,
+   `MEMBERSHIP_PRICE=800`. `PORT` is provided by Railway. Use new, strong values for `ADMIN_PASSWORD`, `BRIDGE_API_KEY` and `SESSION_SECRET`.
    **Change `ADMIN_PASSWORD` to a strong one first** (the dev value is only for localhost).
 4. Generate a public domain, deploy, then run the admin seed once: `railway run npm run seed:admin` (or temporarily set it as the pre-deploy command).
 5. On the gym PC set `WebAppUrl` and `AllowedOrigins` in `bridge/appsettings.local.json` to the Railway URL
@@ -200,4 +251,11 @@ watchdog normally brings it back within seconds, otherwise open ChaqBridge from 
 - [ ] Attendance history filters by date and name; CSV opens in Excel. Each report tab loads and exports CSV.
 - [ ] Member app on a phone: first login forces a new password; Home shows the streak, week tiles and next badge; Board shows masked names and the member's own rank; Me shows badges and visits; the leaderboard switch hides/shows the member; a member cannot open `/admin` or `/api/admin/*`.
 - [ ] Theme: the Light / Dark / System switch changes every page (login, admin, kiosk, dialogs, toasts), survives a reload, and "System" follows the PC setting.
+- [ ] PIN: renew, delete, reset password and fingerprint changes ask for it; a wrong PIN changes nothing; recover it with the password.
+- [ ] Income, reports, activity log and exports are hidden until the PIN, and hide again after opening the kiosk.
+- [ ] Kiosk: one tap on *Admin* returns to the dashboard.
+- [ ] Manual check-in: needs a reason; shows as *Manual* in Attendance; refused for an expired member.
+- [ ] Remove fingerprints: the finger is no longer recognised after the bridge syncs; enrolling again asks for consent.
+- [ ] Scanner program is the new version (the kiosk says "Update the fingerprint program" if not). PC clock is set automatically.
+- [ ] Online test: on the gym PC, **Allow** the browser's local-network request; also try denying it, restarting the PC and unplugging.
 - [ ] Railway readiness: variables set, `ADMIN_PASSWORD` changed, `/login` works over HTTPS, bridge `AllowedOrigins` updated.

@@ -7,6 +7,7 @@ import { BADGES } from "@/lib/badges";
 import { maskName, firstName } from "@/lib/names";
 import { rankFor } from "@/lib/ranks";
 import * as attendance from "@/data/attendance";
+import { countTemplatesOf } from "@/data/fingerprints";
 import * as members from "@/data/members";
 import * as streaks from "@/data/streaks";
 import * as users from "@/data/users";
@@ -20,6 +21,7 @@ const NEW_BADGE_DAYS = 7; // a badge earned in the last week is tagged "NEW"
 
 export async function getPortal(userId: number) {
   const today = todayManila();
+  const fingersStored = await countTemplatesOf(userId);
   const [member, user, view, totalVisits, thisMonth, recent, todayRow, owned] = await Promise.all([
     members.findMember(userId),
     users.findById(userId),
@@ -110,6 +112,12 @@ export async function getPortal(userId: number) {
       daysLeft: left,
     },
     leaderboardOptOut: user.leaderboard_opt_out,
+    privacy: {
+      consentGiven: user.consent_given,
+      consentOn: user.consent_at ? fmt(new Date(user.consent_at), { month: "long", day: "numeric", year: "numeric" }) : null,
+      withdrawnOn: user.consent_withdrawn_at ? fmt(new Date(user.consent_withdrawn_at), { month: "long", day: "numeric", year: "numeric" }) : null,
+      fingersStored,
+    },
     visits: recent.map((v) => ({
       day: fmt(new Date(v.check_in), { weekday: "short", month: "short", day: "numeric" }),
       in: fmt(new Date(v.check_in), { hour: "numeric", minute: "2-digit" }),
